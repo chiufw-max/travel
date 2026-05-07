@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FUKUOKA 2026 · 福岡自遊行互動指南</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Babel Standalone (for JSX in browser) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons (UMD build) -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+    body { font-family: 'Noto Sans TC', sans-serif; }
+
+    /* Keyframe animations to replace Tailwind animate-in plugin */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounceY {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
+    }
+    .animate-fade-in  { animation: fadeIn  0.45s ease both; }
+    .animate-slide-up { animation: slideUp 0.45s ease both; }
+    .animate-bounce   { animation: bounceY 1.2s infinite; }
+
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    /* ─── Icon helpers ─────────────────────────────────────────────────── */
+    /* Wrap lucide icons so we can use them like React components */
+    const Icon = ({ name, size = 20, className = '' }) => {
+      const el = React.useRef(null);
+      React.useEffect(() => {
+        if (el.current && window.lucide) {
+          el.current.innerHTML = '';
+          const svgStr = window.lucide.icons[name]?.toSvg({ width: size, height: size }) ?? '';
+          el.current.innerHTML = svgStr;
+        }
+      }, [name, size]);
+      return <span ref={el} className={`inline-flex items-center justify-center ${className}`} />;
+    };
+
+    /* ─── Data ─────────────────────────────────────────────────────────── */
+    const TRAVEL_DATA = {
+      food: [
+        { name: "元祖博多明太子飯 (Mentaiju)", desc: "福岡第一間明太子料理專賣店，招牌明太子飯是必吃經典。", tip: "建議避開用餐高峰，排隊人潮極多。", tags: ["名產","必吃"] },
+        { name: "中洲屋台街", desc: "體驗福岡獨特的深夜路邊攤文化，感受在地氛圍。", tip: "推薦拉麵與烤雞皮，適合當宵夜。", tags: ["宵夜","在地"] },
+        { name: "一蘭拉麵 總本店", desc: "位於中洲的巨型建築，提供最具代表性的博多拉麵。", tip: "總本店有獨特的裝潢與限定商品。", tags: ["拉麵","地標"] },
+        { name: "牛腸鍋 (Motsunabe)", desc: "福岡靈魂美食，濃郁湯頭搭配肥美牛腸。", tip: "博多車站周邊有許多排隊名店。", tags: ["熱搜","晚餐"] }
+      ],
+      clothing: [
+        { name: "天神地下街", desc: "仿19世紀歐式風格，全長600公尺，匯集超過150間店舖。", tip: "雨天逛街首選，連接多個百貨公司。", tags: ["好逛","室內"] },
+        { name: "博多運河城 (Canal City)", desc: "巨大的複合型商場，有水舞表演與拉麵競技場。", tip: "晚上有結合光雕的水舞秀，非常震撼。", tags: ["水舞","品牌全"] },
+        { name: "LaLaport 福岡", desc: "擁有 1:1 等身大鋼彈 νGundam，購物與拍照聖地。", tip: "鋼彈每小時會有燈光演出，親子首選。", tags: ["鋼彈","親子"] },
+        { name: "岩田屋 (Iwataya)", desc: "天神老牌百貨，精品齊全，是購買高質量日貨的好去處。", tip: "外國遊客可先去退稅櫃檯領取折扣卡。", tags: ["精品","退稅"] }
+      ],
+      housing: [
+        { name: "博多車站周邊 (Forza / Via Inn)", desc: "交通極致方便，出站即達，適合不自駕旅客。", tip: "建議提前三個月預訂，週末常客滿。", tags: ["極便","熱門"] },
+        { name: "天神地區飯店", desc: "位於購物中心點，晚上吃宵夜或逛街都極方便。", tip: "適合喜歡城市喧囂與夜生活的旅客。", tags: ["購物中心","便利"] },
+        { name: "福岡麗思卡爾頓 (Ritz-Carlton)", desc: "2023年開幕的新豪奢地標，視野極佳。", tip: "預算充足的首選，大廳景觀非常美。", tags: ["頂級","新開幕"] },
+        { name: "藥院一帶文青旅店", desc: "安靜且富有設計感，周邊有許多質感咖啡廳。", tip: "適合想體驗在地慢活步調的旅人。", tags: ["文青","寧靜"] }
+      ],
+      transport: [
+        { name: "福岡地下鐵", desc: "三條路線連接機場與市區。目前支援信用卡感應進站。", tip: "單日搭超過3次建議使用一日券 (640円)。", tags: ["機場直達","信用卡感應"] },
+        { name: "西鐵巴士", desc: "市區移動的輔助工具，路線非常密集。", tip: "上下車皆須刷卡，部分路段可能塞車。", tags: ["便宜","路線多"] },
+        { name: "JR 九州特色列車", desc: "如「由布院之森」，是前往周邊縣市的夢幻交通工具。", tip: "熱門班次務必在出發前線上預約劃位。", tags: ["觀光","需預約"] },
+        { name: "西鐵電車", desc: "前往太宰府、柳川的主要交通工具。", tip: "購買一日套票包含乘船券會更划算。", tags: ["外郊區","套票"] }
+      ],
+      education: [
+        { name: "太宰府天滿宮", desc: "供奉學問之神，考生必去的歷史聖地。", tip: "入口星巴克是隈研吾設計的建築傑作。", tags: ["歷史","建築"] },
+        { name: "福岡市博物館", desc: "館藏珍貴的金印，了解福岡與東亞交流史。", tip: "常有特展，適合喜歡歷史的旅客。", tags: ["歷史","室內"] },
+        { name: "福岡城跡 / 舞鶴公園", desc: "江戶時代的古城殘跡，現在是賞櫻與運動好去處。", tip: "春天櫻花季時美不勝收。", tags: ["古蹟","賞櫻"] },
+        { name: "福岡市美術館", desc: "位於大濠公園內，收藏有草間彌生的黃南瓜等藝術品。", tip: "建築設計本身也極具美感。", tags: ["藝術","草間彌生"] }
+      ],
+      leisure: [
+        { name: "福岡塔 (Fukuoka Tower)", desc: "高234公尺，日本最高的海濱塔，可360度俯瞰市景。", tip: "推薦傍晚前往，可看夕陽與夜景。", tags: ["地標","夜景"] },
+        { name: "大濠公園", desc: "模仿中國西湖設計的巨大水景公園，氣氛極佳。", tip: "可以租天鵝船或是沿著湖邊慢跑。", tags: ["散步","放鬆"] },
+        { name: "糸島 (Itoshima)", desc: "福岡近郊的網紅聖地，有海中鳥居與著名的椰子樹鞦韆。", tip: "建議租車前往，或搭乘昭和巴士。", tags: ["海景","IG熱點"] },
+        { name: "BOSS E·ZO FUKUOKA", desc: "巨蛋旁的複合娛樂中心，有滑梯與體感互動館。", tip: "就在 PayPay 巨蛋旁邊，可以一併安排。", tags: ["體感","娛樂"] }
+      ]
+    };
+
+    const CATEGORIES = [
+      { id: 'food',      name: '食 (美食)', icon: 'utensils'      },
+      { id: 'clothing',  name: '衣 (購物)', icon: 'shopping-bag'  },
+      { id: 'housing',   name: '住 (住宿)', icon: 'home'          },
+      { id: 'transport', name: '行 (交通)', icon: 'navigation'    },
+      { id: 'education', name: '育 (文化)', icon: 'book-open'     },
+      { id: 'leisure',   name: '樂 (休閒)', icon: 'music'         },
+      { id: 'maps',      name: '互動地圖', icon: 'map'            },
+    ];
+
+    /* ─── App ──────────────────────────────────────────────────────────── */
+    const App = () => {
+      const [currentTab, setCurrentTab] = useState('food');
+      const [selectedItem, setSelectedItem] = useState(null);
+      const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+      const switchTab = (id) => { setCurrentTab(id); setSelectedItem(null); setIsMenuOpen(false); };
+
+      const renderContent = () => {
+        if (currentTab === 'maps') {
+          return (
+            <div className="flex flex-col rounded-2xl overflow-hidden shadow-inner border border-slate-200" style={{height:'520px'}}>
+              <div className="p-4 bg-white border-b flex items-center justify-between">
+                <h2 className="font-bold text-lg flex items-center gap-2">
+                  <Icon name="map" size={20} className="text-blue-500" />
+                  福岡互動導覽地圖
+                </h2>
+                <div className="flex items-center gap-3 text-xs text-slate-500">
+                  <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 bg-red-500 rounded-full"></span>景點</span>
+                  <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 bg-blue-500 rounded-full"></span>購物</span>
+                </div>
+              </div>
+              <div className="flex-1 relative bg-slate-200">
+                <div className="absolute inset-0 opacity-30" style={{backgroundImage:'radial-gradient(#94a3b8 1px, transparent 1px)', backgroundSize:'24px 24px'}}></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center p-8 bg-white/90 backdrop-blur rounded-xl shadow-xl max-w-sm">
+                    <div className="animate-bounce mb-4 flex justify-center">
+                      <Icon name="map-pin" size={48} className="text-blue-600" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Google Maps 互動地圖</h3>
+                    <p className="text-slate-600 text-sm mb-6">實際部署時可串接 Google Maps API，目前為模擬展示模式。</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg bg-white">
+                        <div className="text-2xl font-bold text-blue-600">24+</div>
+                        <div className="text-xs text-slate-500 uppercase">標記地點</div>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-white">
+                        <div className="text-2xl font-bold text-blue-600">6</div>
+                        <div className="text-xs text-slate-500 uppercase">分類過濾</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute bottom-4 right-4 flex flex-col gap-2">
+                  <button className="p-3 bg-white rounded-full shadow-lg text-slate-600 font-bold">+</button>
+                  <button className="p-3 bg-white rounded-full shadow-lg text-slate-600 font-bold">−</button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
+            {TRAVEL_DATA[currentTab].map((item, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                onClick={() => setSelectedItem(item)}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-snug pr-2">{item.name}</h3>
+                  <Icon name="star" size={18} className="text-amber-400 flex-shrink-0 mt-1" />
+                </div>
+                <p className="text-slate-600 text-sm mb-4 leading-relaxed line-clamp-2">{item.desc}</p>
+                <div className="flex flex-wrap gap-2">
+                  {item.tags.map(tag => (
+                    <span key={tag} className="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded uppercase tracking-wider">#{tag}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-50">
+          {/* ── Header ── */}
+          <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+            <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="bg-blue-600 p-1.5 rounded-lg text-white flex">
+                  <Icon name="navigation" size={20} />
+                </div>
+                <h1 className="font-black text-xl tracking-tighter">FUKUOKA <span className="text-blue-600">2026</span></h1>
+              </div>
+
+              {/* Mobile hamburger */}
+              <button className="md:hidden p-2 text-slate-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                <Icon name={isMenuOpen ? 'x' : 'menu'} size={24} />
+              </button>
+
+              {/* Desktop nav */}
+              <nav className="hidden md:flex items-center gap-1">
+                {CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => switchTab(cat.id)}
+                    className={`px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${
+                      currentTab === cat.id
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                        : 'text-slate-500 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Icon name={cat.icon} size={16} />
+                    {cat.name}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </header>
+
+          {/* ── Mobile Nav Drawer ── */}
+          {isMenuOpen && (
+            <div className="md:hidden fixed inset-0 z-40 bg-white pt-20 p-4 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                {CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => switchTab(cat.id)}
+                    className={`p-4 rounded-xl text-left border flex flex-col gap-2 ${
+                      currentTab === cat.id ? 'bg-blue-50 border-blue-200 text-blue-600' : 'border-slate-100'
+                    }`}
+                  >
+                    <Icon name={cat.icon} size={20} />
+                    <span className="font-bold text-sm">{cat.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Main ── */}
+          <main className="max-w-7xl mx-auto px-4 py-8">
+            <div className="mb-8">
+              <h2 className="text-3xl font-black mb-2 text-slate-800">
+                {CATEGORIES.find(c => c.id === currentTab)?.name} 指南
+              </h2>
+              <p className="text-slate-500">探索福岡最受歡迎的地點與在地建議</p>
+            </div>
+
+            {renderContent()}
+
+            {/* ── CTA Banner ── */}
+            <div className="mt-12 p-8 bg-blue-900 rounded-3xl text-white relative overflow-hidden">
+              <div className="relative z-10 max-w-2xl">
+                <h3 className="text-2xl font-bold mb-4">準備好開始您的福岡之旅了嗎？</h3>
+                <p className="text-blue-100 mb-6 leading-relaxed">
+                  福岡不僅是九州的門戶，更是日本美食之都。從機場到市中心僅需10分鐘，無論是短途快閃還是深度旅遊都非常合適。
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <button className="px-6 py-3 bg-white text-blue-900 font-bold rounded-xl hover:bg-blue-50 transition-colors">下載完整清單</button>
+                  <button className="px-6 py-3 bg-blue-800 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors">聯絡導遊</button>
+                </div>
+              </div>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-20 -mt-20 pointer-events-none"></div>
+            </div>
+          </main>
+
+          {/* ── Detail Modal ── */}
+          {selectedItem && (
+            <div
+              className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/60"
+              style={{backdropFilter:'blur(4px)'}}
+              onClick={() => setSelectedItem(null)}
+            >
+              <div
+                className="bg-white w-full max-w-lg rounded-t-3xl md:rounded-3xl p-8 shadow-2xl relative animate-slide-up"
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setSelectedItem(null)}
+                  className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"
+                >
+                  <Icon name="x" size={20} />
+                </button>
+
+                <div className="mb-6">
+                  <div className="inline-block px-3 py-1 bg-blue-600 text-white text-xs font-black rounded-full mb-3 uppercase tracking-widest">
+                    推薦地點
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 leading-snug">{selectedItem.name}</h3>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex gap-4">
+                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Icon name="info" size={24} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-400 uppercase tracking-wider mb-1">地點簡介</h4>
+                      <p className="text-slate-600 leading-relaxed">{selectedItem.desc}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Icon name="star" size={24} className="text-amber-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-400 uppercase tracking-wider mb-1">在地達人建議</h4>
+                      <p className="text-slate-800 font-medium italic">「{selectedItem.tip}」</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedItem(null)}
+                  className="mt-8 w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                >
+                  <Icon name="navigation" size={18} />
+                  開啟地圖導航
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Footer ── */}
+          <footer className="bg-white border-t border-slate-200 py-12 mt-20">
+            <div className="max-w-7xl mx-auto px-4 text-center">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="bg-slate-900 p-1.5 rounded-lg text-white flex">
+                  <Icon name="navigation" size={16} />
+                </div>
+                <h1 className="font-black text-lg tracking-tighter">FUKUOKA <span className="text-blue-600">2026</span></h1>
+              </div>
+              <p className="text-slate-400 text-sm">© 2026 福岡自遊行互動指南 · 資料整合自多位旅遊達人分享</p>
+              <div className="flex justify-center gap-6 mt-6">
+                <Icon name="globe" size={20} className="text-slate-300 hover:text-blue-500 cursor-pointer" />
+                <Icon name="phone" size={20} className="text-slate-300 hover:text-blue-500 cursor-pointer" />
+                <Icon name="search" size={20} className="text-slate-300 hover:text-blue-500 cursor-pointer" />
+              </div>
+            </div>
+          </footer>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
