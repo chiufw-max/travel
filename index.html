@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🎌 九州福岡五日遊 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --p1:#667eea;--p2:#764ba2;--dark:#2C3E50;--light:#F0F4F8;
+  --sidebar:260px;
+  --fs-xs:13px; --fs-sm:15px; --fs-md:17px; --fs-lg:20px; --fs-xl:26px; --fs-2xl:34px;
+}
+html{font-size:16px;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Noto Sans TC','Microsoft JhengHei',sans-serif;
+  background:var(--light);color:var(--dark);
+  display:flex;flex-direction:column;min-height:100vh;
+}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(135deg,var(--p1) 0%,var(--p2) 100%);
+  color:#fff;padding:44px 48px 36px;
+  display:flex;align-items:center;gap:32px;
+  position:relative;overflow:hidden;
+}
+.hero::after{
+  content:'';position:absolute;right:-60px;top:-60px;
+  width:320px;height:320px;border-radius:50%;
+  background:rgba(255,255,255,.08);pointer-events:none;
+}
+.hero-emoji{font-size:72px;line-height:1;flex-shrink:0;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.hero-text{flex:1;}
+.hero h1{font-size:var(--fs-2xl);font-weight:900;letter-spacing:2px;line-height:1.2;}
+.hero-dates{font-size:var(--fs-md);opacity:.9;margin-top:8px;}
+.hero-badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+.badge{background:rgba(255,255,255,.22);border-radius:24px;padding:7px 18px;font-size:var(--fs-sm);font-weight:600;}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;align-items:flex-start;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar);flex-shrink:0;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  background:#fff;border-right:1px solid #e2e8f0;
+  padding:28px 16px 40px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.sidebar-label{
+  font-size:var(--fs-xs);font-weight:800;color:#94a3b8;
+  text-transform:uppercase;letter-spacing:1.5px;
+  padding:0 8px;margin-bottom:4px;margin-top:8px;
+}
+.day-btn{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;border-radius:12px;border:none;
+  cursor:pointer;font-size:var(--fs-sm);font-weight:700;
+  text-align:left;width:100%;transition:all .25s;
+  background:transparent;color:#64748b;
+}
+.day-btn:hover{background:#f1f5f9;color:var(--dark);}
+.day-btn.active{
+  background:linear-gradient(135deg,var(--p1),var(--p2));
+  color:#fff;box-shadow:0 4px 16px rgba(102,126,234,.35);
+}
+.day-btn .btn-icon{font-size:22px;line-height:1;flex-shrink:0;}
+.day-btn .btn-label{line-height:1.3;}
+.day-btn .btn-sub{font-size:var(--fs-xs);opacity:.75;font-weight:500;}
+
+/* ── MAIN ── */
+.main{
+  flex:1;min-width:0;
+  padding:36px 44px 80px;
+  max-width:1100px;
+}
+
+/* ── TAB CONTENT ── */
+.tab-content{display:none;animation:fadeUp .35s ease;}
+.tab-content.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── DAY HEADER ── */
+.day-hdr{
+  border-radius:20px;padding:28px 32px;margin-bottom:24px;
+  color:#fff;position:relative;overflow:hidden;
+}
+.day-hdr::after{
+  content:'';position:absolute;right:-24px;top:-24px;
+  width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.12);
+}
+.day-hdr h2{font-size:var(--fs-xl);font-weight:900;}
+.day-hdr .sub{font-size:var(--fs-md);opacity:.9;margin-top:6px;}
+.day-hdr .type-badge{
+  display:inline-block;background:rgba(255,255,255,.25);
+  border-radius:14px;padding:6px 16px;font-size:var(--fs-sm);
+  font-weight:700;margin-top:12px;
+}
+.hdr-d1{background:linear-gradient(135deg,#F093FB,#F5576C);}
+.hdr-d2{background:linear-gradient(135deg,#4FACFE,#00F2FE);}
+.hdr-d3{background:linear-gradient(135deg,#43E97B,#38F9D7);}
+.hdr-d4{background:linear-gradient(135deg,#FA709A,#FEE140);}
+.hdr-d5{background:linear-gradient(135deg,#A18CD1,#FBC2EB);}
+.hdr-ov{background:linear-gradient(135deg,var(--p1),var(--p2));}
+
+/* ── TIMELINE ── */
+.timeline{position:relative;margin-bottom:24px;}
+.timeline::before{
+  content:'';position:absolute;left:27px;top:10px;bottom:10px;
+  width:3px;background:linear-gradient(to bottom,var(--p1),var(--p2));border-radius:2px;
+}
+.tl-item{display:flex;gap:18px;margin-bottom:20px;position:relative;}
+.tl-icon{
+  width:56px;height:56px;border-radius:50%;background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;flex-shrink:0;
+  box-shadow:0 3px 12px rgba(0,0,0,.12);z-index:1;
+}
+.tl-card{
+  flex:1;background:#fff;border-radius:16px;
+  padding:18px 22px;box-shadow:0 2px 12px rgba(0,0,0,.07);
+}
+.tl-time{font-size:var(--fs-xs);color:#94a3b8;font-weight:700;margin-bottom:4px;letter-spacing:.5px;}
+.tl-title{font-size:var(--fs-lg);font-weight:800;color:var(--dark);margin-bottom:6px;}
+.tl-desc{font-size:var(--fs-sm);color:#475569;line-height:1.7;}
+.tl-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.tag{padding:5px 11px;border-radius:8px;font-size:var(--fs-xs);font-weight:700;}
+.tag-food{background:#FFF3E0;color:#E65100;}
+.tag-bus{background:#E3F2FD;color:#1565C0;}
+.tag-tip{background:#F3E5F5;color:#6A1B9A;}
+.tag-photo{background:#E8F5E9;color:#2E7D32;}
+.tag-fixed{background:#E3F2FD;color:#0D47A1;}
+.tag-elder{background:#FFF8E1;color:#F57F17;}
+
+/* ── MAP ── */
+.map-wrap{border-radius:18px;overflow:hidden;margin-bottom:24px;box-shadow:0 4px 18px rgba(0,0,0,.1);}
+.map-hdr{background:var(--dark);color:#fff;padding:14px 20px;font-size:var(--fs-md);font-weight:700;display:flex;align-items:center;gap:8px;}
+.map-div{height:380px;}
+
+/* ── SECTION TITLE ── */
+.sec-title{
+  font-size:var(--fs-lg);font-weight:800;color:var(--dark);
+  margin:28px 0 16px;display:flex;align-items:center;gap:8px;
+}
+
+/* ── ATTRACTION GRID ── */
+.att-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.att-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);transition:transform .2s,box-shadow .2s;}
+.att-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.12);}
+.att-img{height:110px;display:flex;align-items:center;justify-content:center;font-size:52px;}
+.att-body{padding:14px 16px 16px;}
+.att-name{font-size:var(--fs-md);font-weight:800;color:var(--dark);margin-bottom:6px;}
+.att-desc{font-size:var(--fs-sm);color:#64748b;line-height:1.6;margin-bottom:10px;}
+.gmap-btn{
+  display:block;width:100%;padding:8px 0;
+  background:linear-gradient(135deg,#4285F4,#34A853);color:#fff;
+  border:none;border-radius:10px;font-size:var(--fs-sm);font-weight:700;
+  text-align:center;text-decoration:none;cursor:pointer;
+}
+
+/* ── FOOD ── */
+.food-row{
+  background:#fff;border-radius:16px;padding:18px 20px;
+  margin-bottom:12px;display:flex;gap:18px;align-items:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.07);
+}
+.food-emoji{font-size:42px;flex-shrink:0;}
+.food-name{font-size:var(--fs-md);font-weight:800;color:var(--dark);}
+.food-desc{font-size:var(--fs-sm);color:#64748b;margin-top:4px;line-height:1.6;}
+
+/* ── NOTICE ── */
+.notice{
+  background:#FFF8E1;border-left:5px solid #FFB300;
+  border-radius:12px;padding:16px 20px;margin-bottom:20px;
+  font-size:var(--fs-sm);color:#555;line-height:1.7;
+}
+.notice strong{color:#E65100;}
+
+/* ── TRANSPORT COMPARISON ── */
+.compare-wrap{background:#fff;border-radius:18px;padding:24px;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,.07);}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0;}
+.cmp-card{border-radius:14px;padding:18px;}
+.cmp-charter{background:#E8F5E9;border:2px solid #4CAF50;}
+.cmp-self{background:#FFF3E0;border:2px solid #FF9800;}
+.cmp-title{font-size:var(--fs-lg);font-weight:800;margin-bottom:12px;}
+.cmp-item{font-size:var(--fs-sm);color:#475569;margin-bottom:7px;line-height:1.6;}
+.verdict{
+  background:linear-gradient(135deg,#43A047,#66BB6A);color:#fff;
+  border-radius:14px;padding:18px 20px;font-size:var(--fs-md);
+  font-weight:700;text-align:center;margin-top:8px;
+}
+
+/* ── OVERVIEW DAY CARDS ── */
+.ov-day-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+.ov-day-card{
+  border-radius:16px;padding:20px;color:#fff;
+  position:relative;overflow:hidden;
+}
+.ov-day-card::after{
+  content:'';position:absolute;right:-12px;bottom:-12px;
+  width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.12);
+}
+.ov-day-num{font-size:32px;font-weight:900;}
+.ov-day-date{font-size:var(--fs-sm);opacity:.9;margin-top:4px;}
+.ov-day-title{font-size:var(--fs-md);font-weight:700;margin-top:10px;}
+.ov-day-badge{display:inline-block;background:rgba(255,255,255,.25);border-radius:12px;padding:5px 12px;font-size:var(--fs-xs);margin-top:8px;}
+
+/* ── TIPS ── */
+.tips-wrap{background:#fff;border-radius:18px;padding:24px;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,.07);}
+.tip-item{display:flex;gap:16px;align-items:flex-start;margin-bottom:18px;}
+.tip-item:last-child{margin-bottom:0;}
+.tip-icon{font-size:30px;flex-shrink:0;margin-top:2px;}
+.tip-title{font-size:var(--fs-md);font-weight:800;color:var(--dark);margin-bottom:4px;}
+.tip-text{font-size:var(--fs-sm);color:#475569;line-height:1.7;}
+
+/* ── TRANSPORT ROW ── */
+.trans-row{
+  background:#E3F2FD;border-radius:12px;
+  padding:13px 18px;margin-bottom:10px;
+  font-size:var(--fs-sm);color:#1565C0;font-weight:600;
+}
+
+/* ── SCROLL TOP ── */
+.scroll-top{
+  position:fixed;right:28px;bottom:32px;
+  width:50px;height:50px;border-radius:50%;
+  background:linear-gradient(135deg,var(--p1),var(--p2));
+  color:#fff;border:none;font-size:22px;cursor:pointer;
+  box-shadow:0 4px 18px rgba(102,126,234,.5);
+  display:none;z-index:250;align-items:center;justify-content:center;
+}
+.scroll-top.show{display:flex;}
+
+/* ── ROUTE DETAIL ── */
+.route-opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.route-card{background:#fff;border-radius:16px;padding:16px 18px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.07);}
+.route-card h4{font-size:var(--fs-md);font-weight:800;color:var(--dark);margin-bottom:4px;}
+.route-card .route-meta{font-size:var(--fs-xs);color:#1565C0;font-weight:700;margin-bottom:10px;background:#E3F2FD;display:inline-block;padding:4px 10px;border-radius:8px;}
+.route-img{width:100%;border-radius:10px;border:1px solid #e2e8f0;display:block;}
+@media(max-width:760px){.route-opt-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <span class="hero-emoji">🎌</span>
+  <div class="hero-text">
+    <h1>九州福岡五日遊 2026</h1>
+    <div class="hero-dates">📅 2026年6月21日（日）― 6月25日（四）・5天4夜</div>
+    <div class="hero-badges">
+      <span class="badge">👨‍👩‍👧‍👦 4大人 + 2孩童</span>
+      <span class="badge">🏨 Cross Life 博多柳橋</span>
+      <span class="badge">✈️ 長榮 BR102 / BR101</span>
+      <span class="badge">♿ 長輩友善規劃</span>
+    </div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-label">行程導覽</div>
+    <button class="day-btn active" data-tab="overview" onclick="switchTab('overview')">
+      <span class="btn-icon">🗺️</span>
+      <div class="btn-label">總覽<div class="btn-sub">整體行程一覽</div></div>
+    </button>
+    <button class="day-btn" data-tab="day1" onclick="switchTab('day1')">
+      <span class="btn-icon">✈️</span>
+      <div class="btn-label">Day 1・6/21<div class="btn-sub">出發抵達福岡</div></div>
+    </button>
+    <button class="day-btn" data-tab="day2" onclick="switchTab('day2')">
+      <span class="btn-icon">🚌</span>
+      <div class="btn-label">Day 2・6/22<div class="btn-sub">太宰府・由布院</div></div>
+    </button>
+    <button class="day-btn" data-tab="day3" onclick="switchTab('day3')">
+      <span class="btn-icon">🌋</span>
+      <div class="btn-label">Day 3・6/23<div class="btn-sub">阿蘇・熊本城</div></div>
+    </button>
+    <button class="day-btn" data-tab="day4" onclick="switchTab('day4')">
+      <span class="btn-icon">👘</span>
+      <div class="btn-label">Day 4・6/24<div class="btn-sub">柳川川下り遊船</div></div>
+    </button>
+    <button class="day-btn" data-tab="day5" onclick="switchTab('day5')">
+      <span class="btn-icon">🏠</span>
+      <div class="btn-label">Day 5・6/25<div class="btn-sub">櫛田神社・海洋世界・返台</div></div>
+    </button>
+    <button class="day-btn" data-tab="taxi" onclick="switchTab('taxi')">
+      <span class="btn-icon">🚕</span>
+      <div class="btn-label">計程車<div class="btn-sub">目的地日文地址</div></div>
+    </button>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ======== OVERVIEW ======== -->
+    <div class="tab-content active" id="content-overview">
+      <div class="day-hdr hdr-ov">
+        <h2>🗺️ 五日遊總覽</h2>
+        <div class="sub">九州福岡 2026年6月21日～6月25日</div>
+        <span class="type-badge">👨‍👩‍👧‍👦 4大人 + 2孩童 · ♿ 長輩友善</span>
+      </div>
+
+      <div class="map-wrap">
+        <div class="map-hdr">🗺️ 五日遊完整路線總覽</div>
+        <div class="map-div" id="map-overview"></div>
+      </div>
+
+      <div class="sec-title">📋 行程總覽</div>
+      <div class="ov-day-grid">
+        <div class="ov-day-card hdr-d1">
+          <div class="ov-day-num">Day 1</div>
+          <div class="ov-day-date">6/21（日）</div>
+          <div class="ov-day-title">✈️ 出發抵達福岡</div>
+          <div class="ov-day-badge">自由行</div>
+        </div>
+        <div class="ov-day-card hdr-d2">
+          <div class="ov-day-num">Day 2</div>
+          <div class="ov-day-date">6/22（一）</div>
+          <div class="ov-day-title">🚌 太宰府・由布院</div>
+          <div class="ov-day-badge">🔒 固定包車</div>
+        </div>
+        <div class="ov-day-card hdr-d3">
+          <div class="ov-day-num">Day 3</div>
+          <div class="ov-day-date">6/23（二）</div>
+          <div class="ov-day-title">🌋 阿蘇・熊本城</div>
+          <div class="ov-day-badge">🔒 固定包車</div>
+        </div>
+        <div class="ov-day-card hdr-d4">
+          <div class="ov-day-num">Day 4</div>
+          <div class="ov-day-date">6/24（三）</div>
+          <div class="ov-day-title">🛶 柳川川下り遊船</div>
+          <div class="ov-day-badge">全員聚餐 🍲</div>
+        </div>
+        <div class="ov-day-card hdr-d5" style="grid-column:span 2;">
+          <div class="ov-day-num">Day 5</div>
+          <div class="ov-day-date">6/25（四）</div>
+          <div class="ov-day-title">⛩️ 櫛田神社 → 🐬 海洋世界 → 返台</div>
+          <div class="ov-day-badge">✈️ BR101 19:20 起飛</div>
+        </div>
+      </div>
+
+      <div class="notice">
+        <strong>👥 成員：</strong>4位大人 + 2位國小孩童<br>
+        <strong>🏨 住宿：</strong>Cross Life 博多柳橋（渡邊通站旁，博多・天神之間）<br>
+        <strong>💡 原則：</strong>長輩友善、孩童安全，景點以平坦動線、室內冷氣為優先
+      </div>
+
+      <div class="sec-title">🌤️ 各日天氣預報</div>
+      <div class="notice" style="background:#E3F2FD;border-left-color:#1565C0;"><strong>📅 預報更新：2026/6/18。</strong>6月下旬為日本梅雨季，天氣變化大，請以出發前最新預報為準，全程建議攜帶折疊傘。</div>
+      <div class="ov-day-grid">
+        <div class="ov-day-card hdr-d1">
+          <div class="ov-day-num" style="font-size:22px;">6/21（日）</div>
+          <div class="ov-day-date">福岡市</div>
+          <div class="ov-day-title">☀️ 晴</div>
+          <div class="ov-day-badge">🌡️ 27° / 20°　☔ 0%</div>
+        </div>
+        <div class="ov-day-card hdr-d2">
+          <div class="ov-day-num" style="font-size:22px;">6/22（一）</div>
+          <div class="ov-day-date">由布院・別府</div>
+          <div class="ov-day-title">🌧️ 陰時有雨</div>
+          <div class="ov-day-badge">🌡️ 由布院 23°/18°・別府 28°/21°　☔ 60–70%</div>
+        </div>
+        <div class="ov-day-card hdr-d3">
+          <div class="ov-day-num" style="font-size:22px;">6/23（二）</div>
+          <div class="ov-day-date">阿蘇・熊本</div>
+          <div class="ov-day-title">🌧️ 雨（山區較涼）</div>
+          <div class="ov-day-badge">🌡️ 阿蘇 22° / 16°　☔ 80%</div>
+        </div>
+        <div class="ov-day-card hdr-d4">
+          <div class="ov-day-num" style="font-size:22px;">6/24（三）</div>
+          <div class="ov-day-date">柳川・福岡</div>
+          <div class="ov-day-title">🌦️ 多雲短暫雨</div>
+          <div class="ov-day-badge">🌡️ 28° / 19°　☔ 60%</div>
+        </div>
+        <div class="ov-day-card hdr-d5" style="grid-column:span 2;">
+          <div class="ov-day-num" style="font-size:22px;">6/25（四）</div>
+          <div class="ov-day-date">福岡市</div>
+          <div class="ov-day-title">☀️ 晴</div>
+          <div class="ov-day-badge">🌡️ 29° / 20°　☔ 0%</div>
+        </div>
+      </div>
+
+      <div class="sec-title">💡 行前必知</div>
+      <div class="tips-wrap">
+        <div class="tip-item"><div class="tip-icon">☔</div><div><div class="tip-title">6月梅雨季必備雨具</div><div class="tip-text">六月下旬為日本梅雨季，氣候悶熱潮濕，務必攜帶折疊傘。建議穿著透氣快乾衣物，備薄外套應對室內冷氣。</div></div></div>
+        <div class="tip-item"><div class="tip-icon">💴</div><div><div class="tip-title">現金不可少</div><div class="tip-text">柳橋市場、神社、郊區小店、屋台路邊攤以現金交易為主。建議每人準備 ¥15,000-20,000 現金。</div></div></div>
+        <div class="tip-item"><div class="tip-icon">📱</div><div><div class="tip-title">網路建議</div><div class="tip-text">九州郊區（阿蘇、由布院山區）訊號偶爾偏弱，建議購買 Softbank 或 Docomo 的 SIM/eSIM，訊號較穩定。</div></div></div>
+        <div class="tip-item"><div class="tip-icon">🌋</div><div><div class="tip-title">阿蘇火山口開放不確定</div><div class="tip-text">阿蘇中岳火口能否靠近視當天火山氣體濃度而定，包車司機會於出發當天早上確認最新管制狀況。</div></div></div>
+        <div class="tip-item"><div class="tip-icon">♿</div><div><div class="tip-title">長輩友善貼心提醒</div><div class="tip-text">太宰府石板路不平，建議穿防滑鞋。由布院部分路段有坡道。熊本城入城有電梯。Day4 柳川以坐船遊覽為主，步行段平緩；6/24 降雨機率高，請備雨具與防滑鞋。</div></div></div>
+        <div class="tip-item"><div class="tip-icon">🍲</div><div><div class="tip-title">Day4 聚餐務必提前預訂</div><div class="tip-text">晚間聚餐為「燒肉壽喜燒 純 天神警固店」黑毛和牛壽喜燒套餐（附飲料暢飲），請提前1-2週預訂6人座位。</div></div></div>
+        <div class="tip-item"><div class="tip-icon">🚐</div><div><div class="tip-title">柳川交通：松月免費接駁巴士</div><div class="tip-text">Day4 往返松月乗船場改搭松月「免費接駁巴士」（去程站內2F案內所、回程自元城町觀光駐車場，午後約每30分一班）；接不上時備案西鐵巴士或計程車。詳見 Day4 頁面。</div></div></div>
+      </div>
+    </div>
+
+    <!-- ======== DAY 1 ======== -->
+    <div class="tab-content" id="content-day1">
+      <div class="day-hdr hdr-d1">
+        <h2>Day 1 ✈️ 初抵福岡</h2>
+        <div class="sub">6月21日（週日）</div>
+        <span class="type-badge">🛬 出發 → 入境 → 入住</span>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-icon">🏥</div><div class="tl-card"><div class="tl-time">11:00</div><div class="tl-title">診所集合出發</div><div class="tl-desc">全員於診所集合上車，前往桃園國際機場。</div></div></div>
+        <div class="tl-item"><div class="tl-icon">✈️</div><div class="tl-card"><div class="tl-time">15:10 起飛</div><div class="tl-title">長榮航空 BR102　桃園 → 福岡</div><div class="tl-desc">飛行時間約3小時10分。</div><div class="tl-tags"><span class="tag tag-bus">✈️ 長榮 BR102</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🛬</div><div class="tl-card"><div class="tl-time">18:20 抵達</div><div class="tl-title">福岡機場（FUK）入境</div><div class="tl-desc">入境審查＋行李提取約1小時。福岡機場為日本入境速度最快的機場之一。</div><div class="tl-tags"><span class="tag tag-tip">💡 福岡機場距市區超近！</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚖</div><div class="tl-card"><div class="tl-time">19:30 → 20:00</div><div class="tl-title">計程車前往飯店</div><div class="tl-desc">機場國際線出口搭計程車，約15-20分鐘，車資約 ¥2,000-2,500。行李多時最方便的選擇。</div><div class="tl-tags"><span class="tag tag-bus">🚖 計程車 ¥2,000-2,500</span><span class="tag tag-tip">💡 給司機看飯店日文地址</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🏨</div><div class="tl-card"><div class="tl-time">20:00</div><div class="tl-title">Check-in：Cross Life 博多柳橋</div><div class="tl-desc">飯店地址：福岡市中央區春吉3丁目12-1<br>地鐵「渡邊通站」步行3分鐘，介於博多站與天神之間，地點絕佳！</div><div class="tl-tags"><span class="tag tag-photo">📍 柳橋聯合市場就在旁邊</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🍜</div><div class="tl-card"><div class="tl-time">20:30 晚餐</div><div class="tl-title">飯店周邊覓食</div><div class="tl-desc">到達較晚，柳橋市場已休市。建議步行至渡邊通大馬路，或短程計程車往博多站方向。</div><div class="tl-tags"><span class="tag tag-food">🍜 博多拉麵（一風堂）</span><span class="tag tag-food">🥟 博多一口餃子</span><span class="tag tag-food">🏪 便利商店備用</span></div></div></div>
+      </div>
+      <div class="map-wrap"><div class="map-hdr">📍 Day1：機場 → 飯店 → 餐廳</div><div class="map-div" id="map-day1"></div></div>
+      <div class="sec-title">🍜 晚餐推薦</div>
+      <div class="food-row"><div class="food-emoji">🍜</div><div><div class="food-name">博多拉麵（一風堂）</div><div class="food-desc">濃郁豚骨湯底，博多必吃。博多站周邊多家分店，深夜仍有營業。</div></div></div>
+      <div class="food-row"><div class="food-emoji">🥟</div><div><div class="food-name">博多一口餃子</div><div class="food-desc">皮薄餡多的博多特色小餃子，孩童超愛，份量適中，可當宵夜輕食。</div></div></div>
+      <div class="food-row"><div class="food-emoji">🍻</div><div><div class="food-name">地雞居酒屋</div><div class="food-desc">博多站周邊居酒屋林立，多有適合孩童的軟飲料和豐富食物選擇。</div></div></div>
+    </div>
+
+    <!-- ======== DAY 2 ======== -->
+    <div class="tab-content" id="content-day2">
+      <div class="day-hdr hdr-d2">
+        <h2>Day 2 🚌 太宰府・由布院・別府</h2>
+        <div class="sub">6月22日（週一）</div>
+        <span class="type-badge">🔒 固定包車一日遊</span>
+      </div>
+      <div class="notice"><strong>🔒 本日為固定行程，不可更動。</strong><br>包車全天：太宰府天滿宮 → 由布院（金鱗湖散策） → 別府纜車（備案）→ 返福岡</div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-icon">🌅</div><div class="tl-card"><div class="tl-time">07:00 – 08:00</div><div class="tl-title">飯店早餐</div><div class="tl-desc">飽餐一頓，準備全天長途行程。</div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚌</div><div class="tl-card"><div class="tl-time">08:00 準時出發</div><div class="tl-title">包車出發（飯店大廳）</div><div class="tl-desc">請務必準時集合，避免壓縮景點停留時間。</div><div class="tl-tags"><span class="tag tag-fixed">🔒 固定時間</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">⛩️</div><div class="tl-card"><div class="tl-time">08:45 – 10:15</div><div class="tl-title">太宰府天滿宮（1.5小時）</div><div class="tl-desc">祭祀學問之神菅原道真，日本知名神社。必走太鼓橋，必看御神牛，必吃梅枝餅！</div><div class="tl-tags"><span class="tag tag-food">🍡 梅枝餅 必吃</span><span class="tag tag-photo">📸 星巴克表參道打卡</span><span class="tag tag-elder">♿ 參道平坦好走</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚌</div><div class="tl-card"><div class="tl-time">10:15 – 12:15</div><div class="tl-title">車程（約2小時）→ 由布院</div><div class="tl-desc">長輩可在車上休息補充體力，欣賞九州丘陵山景。</div><div class="tl-tags"><span class="tag tag-elder">♿ 車上充分休息</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🏡</div><div class="tl-card"><div class="tl-time">12:15 – 15:15</div><div class="tl-title">由布院・湯布院漫遊（3小時含午餐）</div><div class="tl-desc">散策：車站 → 湯之坪街道（特色甜點・史努比茶屋）→ 湯布院花卉村（童話歐洲風）→ 金鱗湖（夢幻湖景）</div><div class="tl-tags"><span class="tag tag-food">🥩 豐後牛釜飯 午餐</span><span class="tag tag-food">🎂 B-speak 生乳捲</span><span class="tag tag-food">🧀 Milch 半熟起司</span><span class="tag tag-photo">📸 金鱗湖打卡</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚡</div><div class="tl-card"><div class="tl-time">15:15 – 17:30（備案選項）</div><div class="tl-title">別府纜車（視體力決定）</div><div class="tl-desc">搭纜車眺望別府灣絕景。若長輩體力不足，可在由布院多待一會兒，直接返程，彈性調整。</div><div class="tl-tags"><span class="tag tag-photo">📸 別府灣山頂絕景</span><span class="tag tag-elder">⚠️ 視長輩體力決定</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🏨</div><div class="tl-card"><div class="tl-time">17:30 – 19:30</div><div class="tl-title">返回福岡飯店</div><div class="tl-desc">長途返程，在車上休息，回飯店稍作梳洗。</div><div class="tl-tags"><span class="tag tag-elder">♿ 車上休息</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🍲</div><div class="tl-card"><div class="tl-time">20:00 晚餐</div><div class="tl-title">博多シーフードうお田（Uoden）</div><div class="tl-desc">全員晚餐：博多人氣海鮮居酒屋，主打玄界灘新鮮海產、生魚片與爐端燒。<br>飯店搭地鐵七隈線（渡邊通 → 天神南，¥210，可刷 SUGOCA）約19分即達，亦可搭計程車。</div><div class="tl-tags"><span class="tag tag-food">🐟 玄界灘海鮮</span><span class="tag tag-bus">🚇 七隈線 ¥210</span><span class="tag tag-tip">⚠️ 建議提前預訂</span></div></div></div>
+      </div>
+      <div class="map-wrap"><div class="map-hdr">📍 Day2 行程路線</div><div class="map-div" id="map-day2"></div></div>
+      <div class="sec-title">🚆 晚餐乘換案內（飯店 → うお田）</div>
+      <div class="route-card">
+        <h4>飯店 → 博多シーフード うお田</h4>
+        <div class="route-meta">19:32 → 19:51 ｜ 地鐵七隈線 ｜ ¥210（可刷 SUGOCA）</div>
+        <a href="travel/img624/d622_1.png" target="_blank"><img class="route-img" src="travel/img624/d622_1.png" alt="飯店→うお田 乘換案內"></a>
+      </div>
+      <div class="sec-title">🗺️ 今日景點</div>
+      <div class="att-grid">
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#667eea,#764ba2)">⛩️</div><div class="att-body"><div class="att-name">太宰府天滿宮</div><div class="att-desc">學問之神，必吃梅枝餅，星巴克表參道店著名打卡點。</div><a class="gmap-btn" href="https://maps.google.com/?q=太宰府天満宮" target="_blank">📍 Google Maps</a></div></div>
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#4FACFE,#00F2FE)">🏡</div><div class="att-body"><div class="att-name">由布院金鱗湖</div><div class="att-desc">早晨有神祕薄霧的夢幻湖泊，翠綠山嶺環繞，絕美景色。</div><a class="gmap-btn" href="https://maps.google.com/?q=金鱗湖+由布院" target="_blank">📍 Google Maps</a></div></div>
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#43E97B,#38F9D7)">🌺</div><div class="att-body"><div class="att-name">湯布院花卉村</div><div class="att-desc">童話歐洲風格小村落，孩童最愛的夢幻場所。</div><a class="gmap-btn" href="https://maps.google.com/?q=湯布院フローラルビレッジ" target="_blank">📍 Google Maps</a></div></div>
+      </div>
+      <div class="sec-title">🚗 交通資訊</div>
+      <div class="trans-row">🚌 全日包車，無需自行安排交通</div>
+      <div class="trans-row">📏 福岡 → 太宰府 約45分 ｜ 太宰府 → 由布院 約1.5-2小時</div>
+      <div class="trans-row">📏 由布院 → 別府 約30分 ｜ 別府 → 福岡 約1.5小時</div>
+    </div>
+
+    <!-- ======== DAY 3 ======== -->
+    <div class="tab-content" id="content-day3">
+      <div class="day-hdr hdr-d3">
+        <h2>Day 3 🌋 壯觀阿蘇・熊本城</h2>
+        <div class="sub">6月23日（週二）</div>
+        <span class="type-badge">🔒 固定包車一日遊</span>
+      </div>
+      <div class="notice"><strong>🔒 本日為固定行程，不可更動。</strong><br>包車全天：大觀峰 → 草千里 → 阿蘇中岳火口 → 熊本城 → 城彩苑 → 返福岡</div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-icon">🌅</div><div class="tl-card"><div class="tl-time">07:00 – 08:00</div><div class="tl-title">飯店早餐</div><div class="tl-desc">今天行程最長，務必吃飽。</div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚌</div><div class="tl-card"><div class="tl-time">08:00 準時出發</div><div class="tl-title">包車出發（飯店大廳）</div><div class="tl-desc">前往阿蘇，車程約2.5小時，可在車上補眠。</div><div class="tl-tags"><span class="tag tag-fixed">🔒 固定時間</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🏔️</div><div class="tl-card"><div class="tl-time">10:30 – 13:30</div><div class="tl-title">阿蘇火山區域（3小時含午餐）</div><div class="tl-desc"><strong>①大觀峰：</strong>俯瞰世界最大破火山口，史詩壯觀。<br><strong>②草千里：</strong>無盡大草原＋馬兒悠遊，極為療癒。<br><strong>③中岳火口：</strong>視當天氣體濃度開放，翡翠綠火口湖。</div><div class="tl-tags"><span class="tag tag-food">🐄 阿蘇赤牛丼 必吃</span><span class="tag tag-photo">📸 大觀峰絕景</span><span class="tag tag-elder">♿ 大觀峰有觀景台</span><span class="tag tag-tip">⚠️ 火口視當天氣象</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚌</div><div class="tl-card"><div class="tl-time">13:30 – 15:00</div><div class="tl-title">車程移動（前往熊本）</div><div class="tl-desc">約1.5小時，在車上休息補充體力。</div></div></div>
+        <div class="tl-item"><div class="tl-icon">🏯</div><div class="tl-card"><div class="tl-time">15:00 – 17:00</div><div class="tl-title">熊本城 &amp; 城彩苑（2小時）</div><div class="tl-desc">日本三大名城！震後修復的雄壯天守閣令人震撼。城彩苑重現江戶氛圍，熊本名產＋熊本熊周邊這裡最齊全。</div><div class="tl-tags"><span class="tag tag-photo">📸 熊本城天守閣</span><span class="tag tag-food">🛍️ 芥末蓮藕・紅豆番薯糰子</span><span class="tag tag-elder">♿ 入城有電梯</span><span class="tag tag-tip">⚠️ 最後入場16:30</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🏨</div><div class="tl-card"><div class="tl-time">17:00 – 19:00（含塞車）</div><div class="tl-title">返回福岡飯店</div><div class="tl-desc">傍晚容易塞車。兩天包車圓滿結束！回飯店稍作休息梳洗。</div><div class="tl-tags"><span class="tag tag-elder">♿ 回飯店休息</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🍲</div><div class="tl-card"><div class="tl-time">20:00 晚餐</div><div class="tl-title">博多水炊き とり田 薬院店</div><div class="tl-desc">全員晚餐：博多名物「水炊き」（雞白湯鍋）名店。<strong>已預約</strong>：水炊き「松」套餐 ¥8,800／人，4大2小，預約ID G9W6WQ。<br>飯店搭地鐵七隈線（渡邊通 → 薬院大通，¥210，可刷 SUGOCA）約19分即達。地址：福岡市中央區薬院2-3-30 CASE Bldg 1F。</div><div class="tl-tags"><span class="tag tag-food">🍲 博多水炊き「松」</span><span class="tag tag-bus">🚇 七隈線 ¥210</span><span class="tag tag-tip">✅ 已預約 G9W6WQ</span></div></div></div>
+      </div>
+      <div class="map-wrap"><div class="map-hdr">📍 Day3 行程路線：阿蘇・熊本</div><div class="map-div" id="map-day3"></div></div>
+      <div class="sec-title">🚆 晚餐乘換案內（飯店 → とり田）</div>
+      <div class="route-card">
+        <h4>飯店 → 博多水炊き とり田 薬院店</h4>
+        <div class="route-meta">19:03 → 19:22 ｜ 地鐵七隈線 ｜ ¥210（可刷 SUGOCA）</div>
+        <a href="travel/img624/d623_2.png" target="_blank"><img class="route-img" src="travel/img624/d623_2.png" alt="飯店→とり田 乘換案內"></a>
+      </div>
+      <div class="route-card">
+        <h4>✅ とり田 薬院店・預約確認</h4>
+        <div class="route-meta">6/23 20:00 ｜ 4大2小 ｜ 水炊き「松」¥8,800/人 ｜ 預約ID G9W6WQ</div>
+        <a href="travel/img624/d623_1.png" target="_blank"><img class="route-img" src="travel/img624/d623_1.png" alt="とり田 預約確認"></a>
+      </div>
+      <div class="sec-title">🗺️ 今日景點</div>
+      <div class="att-grid">
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#43E97B,#38F9D7)">🏔️</div><div class="att-body"><div class="att-name">阿蘇大觀峰</div><div class="att-desc">俯瞰世界最大破火山口，阿蘇五岳化身「涅槃大佛」。</div><a class="gmap-btn" href="https://maps.google.com/?q=大観峰+阿蘇" target="_blank">📍 Google Maps</a></div></div>
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#a8edea,#fed6e3)">🐎</div><div class="att-body"><div class="att-name">草千里浜</div><div class="att-desc">廣闊翠綠草原，馬匹自由漫步，背景冒煙火山如夢似幻。</div><a class="gmap-btn" href="https://maps.google.com/?q=草千里ヶ浜+阿蘇" target="_blank">📍 Google Maps</a></div></div>
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#f7971e,#ffd200)">🌋</div><div class="att-body"><div class="att-name">阿蘇中岳火口</div><div class="att-desc">翡翠綠火口湖，冒著硫磺氣，世界少數可近觀的活火山。</div><a class="gmap-btn" href="https://maps.google.com/?q=阿蘇中岳火口" target="_blank">📍 Google Maps</a></div></div>
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#667eea,#764ba2)">🏯</div><div class="att-body"><div class="att-name">熊本城</div><div class="att-desc">日本三大名城，地震後修復更顯歷史滄桑，城彩苑有熊本熊周邊。</div><a class="gmap-btn" href="https://maps.google.com/?q=熊本城" target="_blank">📍 Google Maps</a></div></div>
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#FA709A,#FEE140)">🛒</div><div class="att-body"><div class="att-name">城彩苑</div><div class="att-desc">熊本城旁的江戶風情商店街，熊本熊周邊商品最齊全之處。</div><a class="gmap-btn" href="https://maps.google.com/?q=城彩苑+熊本" target="_blank">📍 Google Maps</a></div></div>
+      </div>
+      <div class="sec-title">🍽️ 今日美食</div>
+      <div class="food-row"><div class="food-emoji">🐄</div><div><div class="food-name">阿蘇赤牛丼</div><div class="food-desc">阿蘇名物，鮮嫩多汁的赤牛肉鋪滿熱飯，在阿蘇必吃！</div></div></div>
+      <div class="food-row"><div class="food-emoji">🪷</div><div><div class="food-name">熊本・芥末蓮藕</div><div class="food-desc">熊本最具代表性鄉土料理，蓮藕填入芥末味噌，口感獨特。</div></div></div>
+      <div class="food-row"><div class="food-emoji">🟣</div><div><div class="food-name">いきなり団子（紅豆番薯糰子）</div><div class="food-desc">熊本傳統甜點，外皮Q軟包裹番薯和紅豆，城彩苑內多店有賣。</div></div></div>
+    </div>
+
+    <!-- ======== DAY 4 ======== -->
+    <div class="tab-content" id="content-day4">
+      <div class="day-hdr hdr-d4">
+        <h2>Day 4 🛶 柳川川下り遊船</h2>
+        <div class="sub">6月24日（週三）</div>
+        <span class="type-badge">🛶 川下り遊船 + 🍱 鰻魚飯 + 🍲 全員聚餐</span>
+      </div>
+      <div class="notice" style="background:#E3F2FD;border-left-color:#1E88E5;"><strong>☔ 雨天調整（6/24 降雨機率高）：</strong>取消和服體驗，今日以有頂篷的「川下り遊船」為主，並提前至 <strong>10:00 上船</strong>；午餐於沖端「民藝茶屋六騎」分兩批入座（12:00／12:30）。<br><strong>🚐 回程：</strong>搭松月<strong>免費接駁巴士</strong>自沖端返「西鐵柳川駅」（午後約每 30 分一班，班次當天再確認）。</div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-icon">🥐</div><div class="tl-card"><div class="tl-time">07:30 – 08:10</div><div class="tl-title">飯店早餐・出發前準備</div><div class="tl-desc">用過早餐後整裝出發，今日往南前往柳川，車程約1小時。雨天請備雨具與防滑鞋。</div><div class="tl-tags"><span class="tag tag-elder">♿ 從容出發不趕</span><span class="tag tag-tip">☔ 雨天備案</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚆</div><div class="tl-card"><div class="tl-time">08:19 出發</div><div class="tl-title">飯店 → 薬院站 → 西鐵柳川</div><div class="tl-desc">08:19 飯店出發，步行約8分至「薬院站」 → 搭<strong>西鐵天神大牟田線「特急」</strong>（大牟田行）→ 09:19 抵「西鐵柳川站」 → 於站內 2F「松月案內所」轉搭<strong>松月免費接駁巴士</strong>前往松月乗船場。</div><div class="tl-tags"><span class="tag tag-bus">🚆 西鐵特急 ¥960</span><span class="tag tag-bus">🚐 免費接駁</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🛶</div><div class="tl-card"><div class="tl-time">10:00 上船</div><div class="tl-title">松月乘船場・柳川川下り遊船</div><div class="tl-desc">登「どんこ舟」沿護城河緩緩順流而下至沖端，約60–70分，船夫撐篙吟唱，兩岸柳樹與白壁古宅相映。<strong>船有頂篷，小雨亦可成行</strong>（建議備雨具、暖暖包）。<br>地址：柳川市三橋町高畑329。</div><div class="tl-tags"><span class="tag tag-photo">🛶 川下り遊船</span><span class="tag tag-elder">♿ 平穩坐船賞景</span><span class="tag tag-tip">☔ 有頂篷遮雨</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🍱</div><div class="tl-card"><div class="tl-time">12:00</div><div class="tl-title">民藝茶屋六騎・鰻魚飯（第一批・2人）</div><div class="tl-desc">柳川名物「うなぎのせいろ蒸し」（鰻魚蒸籠飯）！昭和46年創業老舖，位於沖端水鄉區，船程終點步行可達。<br><strong>已訂位 2 位</strong>。地址：柳川市沖端町28。</div><div class="tl-tags"><span class="tag tag-food">🍱 柳川鰻魚蒸籠飯</span><span class="tag tag-tip">✅ 訂位 2人</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🍱</div><div class="tl-card"><div class="tl-time">12:30</div><div class="tl-title">民藝茶屋六騎・鰻魚飯（第二批・4人）</div><div class="tl-desc">同店第二批入座，<strong>已訂位 4 位</strong>（6 人分兩時段，方便分批用餐）。</div><div class="tl-tags"><span class="tag tag-food">🍱 鰻魚蒸籠飯</span><span class="tag tag-tip">✅ 訂位 4人</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚐</div><div class="tl-card"><div class="tl-time">餐後 約14:00–15:00</div><div class="tl-title">松月免費接駁巴士・返回西鐵柳川駅</div><div class="tl-desc">餐後步行至「元城町觀光駐車場」搭<strong>松月免費接駁巴士</strong>回「西鐵柳川駅」，午後約 14:00／14:30／15:00／15:30／16:00／16:30 發車。<br>⚠️ 班次與末班時間請當天於六騎或乗船場再確認；若接不上，可改搭<strong>西鐵巴士</strong>或<strong>計程車</strong>（約10分）至西鐵柳川駅。</div><div class="tl-tags"><span class="tag tag-bus">🚐 免費接駁</span><span class="tag tag-tip">⚠️ 班次當天確認</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚆</div><div class="tl-card"><div class="tl-time">返程</div><div class="tl-title">西鐵柳川 → 薬院 → 飯店</div><div class="tl-desc">於「西鐵柳川站」搭<strong>西鐵天神大牟田線「特急」</strong>（西鐵福岡行）→ 約47分抵「薬院站」 → 步行約8分回到飯店稍作休息。</div><div class="tl-tags"><span class="tag tag-bus">🚆 西鐵特急 ¥960</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🍲</div><div class="tl-card"><div class="tl-time">19:00</div><div class="tl-title">🎉 全員聚餐・燒肉壽喜燒 純 天神警固店</div><div class="tl-desc">JA全農直營，主打九州產黑毛和牛！<br><strong>黑毛和牛壽喜燒套餐 ＋ 酒水飲料無限暢飲</strong>。<br>地址：福岡市中央區警固1-6-56 サウスガーデンビル1F（薬院大通站步行6分／天神步行8分）。</div><div class="tl-tags"><span class="tag tag-food">🍲 黑毛和牛壽喜燒</span><span class="tag tag-food">🍻 飲料暢飲</span><span class="tag tag-tip">⚠️ 建議提前預訂</span></div></div></div>
+      </div>
+      <div class="map-wrap"><div class="map-hdr">📍 Day4 柳川川下り遊船路線</div><div class="map-div" id="map-day4"></div></div>
+
+      <div class="sec-title">🚆 交通詳情（乘換案內）</div>
+      <div class="route-card">
+        <h4>① 去程　飯店 → 西鐵柳川（轉松月接駁）</h4>
+        <div class="route-meta">08:19 → 09:19 ｜ 西鐵特急 ｜ ¥960 ｜ 約60分</div>
+        <a href="travel/img624/d624_1.png" target="_blank"><img class="route-img" src="travel/img624/d624_1.png" alt="去程路線：クロスライフ博多柳橋→薬院→西鐵柳川"></a>
+        <div class="route-meta" style="margin-top:6px;">＊抵西鐵柳川後，於站內 2F 松月案內所搭免費接駁巴士前往松月乗船場（圖末段步行段改為接駁巴士）。</div>
+      </div>
+      <div class="route-card">
+        <h4>② 返程　西鐵柳川 → 薬院 → 飯店</h4>
+        <div class="route-meta">西鐵特急 ｜ ¥960 ｜ 約60分</div>
+        <a href="travel/img624/d624_4.png" target="_blank"><img class="route-img" src="travel/img624/d624_4.png" alt="返程路線：西鐵柳川→薬院→クロスライフ博多柳橋"></a>
+        <div class="route-meta" style="margin-top:6px;">＊先搭松月免費接駁巴士自沖端（元城町觀光駐車場）回西鐵柳川駅，再轉西鐵特急。</div>
+      </div>
+      <div class="route-card">
+        <h4>③ 聚餐　飯店周邊 → 純 天神警固店</h4>
+        <div class="route-meta">19:00 聚餐 ｜ 黑毛和牛壽喜燒</div>
+        <a href="travel/img624/d624_5.png" target="_blank"><img class="route-img" src="travel/img624/d624_5.png" alt="聚餐地點地圖：クロスライフ博多柳橋→純 天神警固店"></a>
+      </div>
+
+      <div class="sec-title">🗺️ 今日景點</div>
+      <div class="att-grid">
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#4FACFE,#00F2FE)">🛶</div><div class="att-body"><div class="att-name">松月乘船場（川下り）</div><div class="att-desc">柳川觀光開發川下り遊船起點，搭どんこ舟悠遊水鄉護城河。</div><a class="gmap-btn" href="https://maps.google.com/?q=松月乗船場+柳川" target="_blank">📍 Google Maps</a></div></div>
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#f7971e,#ffd200)">🍱</div><div class="att-body"><div class="att-name">民藝茶屋六騎</div><div class="att-desc">昭和46年創業，柳川名物鰻魚蒸籠飯老舖，位於沖端水鄉區。</div><a class="gmap-btn" href="https://maps.google.com/?q=民芸茶屋六騎+柳川" target="_blank">📍 Google Maps</a></div></div>
+        <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#667eea,#764ba2)">🍲</div><div class="att-body"><div class="att-name">純 天神警固店</div><div class="att-desc">JA全農直營燒肉壽喜燒，九州黑毛和牛，今日全員聚餐地點。</div><a class="gmap-btn" href="https://maps.google.com/?q=焼肉すき焼き純+天神警固店" target="_blank">📍 Google Maps</a></div></div>
+      </div>
+      <div class="sec-title">🍽️ 今日美食</div>
+      <div class="food-row"><div class="food-emoji">🍱</div><div><div class="food-name">柳川名物・鰻魚蒸籠飯（うなぎのせいろ蒸し）</div><div class="food-desc">柳川代表料理！醬汁飯鋪上炭烤鰻魚再以蒸籠蒸熱，米飯入味、鰻魚香嫩。民藝茶屋六騎午餐享用。</div></div></div>
+      <div class="food-row"><div class="food-emoji">🥩</div><div><div class="food-name">九州黑毛和牛壽喜燒</div><div class="food-desc">晚間全員聚餐，純 天神警固店黑毛和牛壽喜燒套餐，附酒水飲料無限暢飲。</div></div></div>
+      <div class="sec-title">🚆 Day4 交通建議</div>
+      <div class="trans-row">🚆 飯店（薬院站）→ 西鐵柳川：西鐵天神大牟田線「特急」約47分（¥960）｜可刷 SUGOCA</div>
+      <div class="trans-row">🚐 西鐵柳川駅 ↔ 松月乗船場／沖端：松月<strong>免費接駁巴士</strong>（去程站內2F案內所；回程自元城町觀光駐車場，午後約每30分一班）</div>
+      <div class="trans-row">🚌 備案（接駁接不上時）：西鐵巴士或計程車（約10分）至西鐵柳川駅</div>
+
+      <div class="sec-title">💳 交通卡（SUGOCA）儲值試算</div>
+      <div class="notice" style="background:#E8F5E9;border-left-color:#43A047;"><strong>✅ 西鐵電車與西鐵巴士皆可使用 SUGOCA</strong>（Suica、icoca、nimoca 等全國 IC 卡通用）。今日柳川往返乗船場以松月<strong>免費接駁巴士</strong>為主，IC 卡主要用於西鐵特急。</div>
+      <div class="route-card">
+        <h4>Day4＋Day5 交通卡需儲值金額（每位大人，不含計程車）</h4>
+        <div class="route-meta">🚖 計程車不可用 IC 卡，需另備現金</div>
+        <div class="trans-row">🚆 Day4 去程　薬院 → 西鐵柳川（特急）：¥960</div>
+        <div class="trans-row">🚐 Day4 柳川往返乗船場（松月免費接駁巴士）：¥0</div>
+        <div class="trans-row">🚆 Day4 返程　西鐵柳川 → 薬院（特急）：¥960</div>
+        <div class="trans-row">🚇 Day5 飯店 → 櫛田神社（七隈線）：¥210（海之中道、機場為計程車，IC ¥0）</div>
+        <div class="trans-row" style="background:#FFF3E0;color:#E65100;font-weight:800;">💴 合計（每位大人）：¥2,130　→ 建議每張卡儲值 ¥3,000（含緩衝＋超商小額消費）<br>＊另每日晚餐往返（七隈線 ¥210/趟）若也刷卡，請再多備餘額。</div>
+        <div class="trans-row" style="background:#F3E5F5;color:#6A1B9A;">👦 國小孩童為兒童票（約半價）：Day4 約 ¥960／位，建議儲值 ¥1,500</div>
+      </div>
+    </div>
+
+    <!-- ======== DAY 5 ======== -->
+    <div class="tab-content" id="content-day5">
+      <div class="day-hdr hdr-d5">
+        <h2>Day 5 🏠 最後衝刺，返台</h2>
+        <div class="sub">6月25日（週四）</div>
+        <span class="type-badge">✈️ BR101 19:20 起飛</span>
+      </div>
+      <div class="notice"><strong>⏰ 17:00 機場集合！</strong>上午逛櫛田神社與川端商店街，中午前往海洋世界海之中道，下午回飯店領行李後直奔機場。請預留叫車與塞車時間。</div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-icon">🍳</div><div class="tl-card"><div class="tl-time">08:00 – 09:00</div><div class="tl-title">飯店早餐 &amp; 退房</div><div class="tl-desc">享用早餐並辦理退房手續。</div></div></div>
+        <div class="tl-item"><div class="tl-icon">🧳</div><div class="tl-card"><div class="tl-time">09:00</div><div class="tl-title">行李寄放飯店櫃檯</div><div class="tl-desc">將行李寄放在飯店前台（通常免費，下午回來再領），輕裝出遊。</div><div class="tl-tags"><span class="tag tag-elder">♿ 輕裝出門</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">⛩️</div><div class="tl-card"><div class="tl-time">10:00 – 12:00</div><div class="tl-title">櫛田神社 ＋ 川端通商店街</div><div class="tl-desc">博多總鎮守「櫛田神社」，供奉博多祇園山笠的大型飾山笠，氣勢非凡；緊鄰的「川端通商店街」是福岡最古老的拱頂商店街，可採買伴手禮、品嚐川端善哉等在地小吃。</div><div class="tl-tags"><span class="tag tag-photo">📸 飾山笠</span><span class="tag tag-food">🎁 商店街採買伴手禮</span><span class="tag tag-elder">♿ 商店街有頂棚平坦好走</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚖</div><div class="tl-card"><div class="tl-time">12:00 – 12:30</div><div class="tl-title">計程車前往海之中道</div><div class="tl-desc">搭計程車前往「海洋世界海之中道」，約20-30分鐘。</div><div class="tl-tags"><span class="tag tag-bus">🚖 計程車約20-30分</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🐬</div><div class="tl-card"><div class="tl-time">12:30 – 15:00</div><div class="tl-title">海洋世界海之中道（マリンワールド海の中道）</div><div class="tl-desc">九州具代表性的水族館，臨博多灣，展示玄界灘生態。海豚與海獅表演、巨大水槽群與企鵝，孩童最愛，室內為主、不受天氣影響。</div><div class="tl-tags"><span class="tag tag-photo">🐬 海豚秀</span><span class="tag tag-elder">♿ 室內動線平坦</span><span class="tag tag-food">🍽️ 館內可用午餐</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🧳</div><div class="tl-card"><div class="tl-time">15:00 – 15:30</div><div class="tl-title">計程車回飯店領行李</div><div class="tl-desc">搭計程車返回「Cross Life 博多柳橋」，向櫃檯領回寄放的行李，確認物品齊全。</div><div class="tl-tags"><span class="tag tag-bus">🚖 計程車回飯店</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🚖</div><div class="tl-card"><div class="tl-time">16:30 – 17:00</div><div class="tl-title">前往福岡機場（國際線）</div><div class="tl-desc">搭計程車或 Uber 前往機場，飯店到國際航廈約20分鐘。請預留叫車與塞車時間。</div><div class="tl-tags"><span class="tag tag-bus">🚖 計程車 約¥2,000</span><span class="tag tag-tip">⚠️ 預留塞車時間</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">🛫</div><div class="tl-card"><div class="tl-time">17:00 機場集合</div><div class="tl-title">福岡機場國際線 出境</div><div class="tl-desc">全員於國際線出境大廳集合（BR101 起飛前2小時20分），辦理登機＋托運行李。機場免稅店不大，但菸酒、化妝品、全國性伴手禮（白色戀人、薯條三兄弟等）都有。</div><div class="tl-tags"><span class="tag tag-fixed">✅ 全員17:00機場集合</span></div></div></div>
+        <div class="tl-item"><div class="tl-icon">✈️</div><div class="tl-card"><div class="tl-time">19:20 – 20:45</div><div class="tl-title">長榮航空 BR101 返回台北</div><div class="tl-desc">飛行約1小時25分。抵台北桃園後，機場接駁車接送至診所下車，旅程結束！</div><div class="tl-tags"><span class="tag tag-tip">🏠 21:30~ 診所接送</span></div></div></div>
+      </div>
+      <div class="map-wrap"><div class="map-hdr">📍 Day5 櫛田神社・海洋世界・機場路線</div><div class="map-div" id="map-day5"></div></div>
+      <div class="sec-title">🚆 上午乘換案內（飯店 → 櫛田神社）</div>
+      <div class="route-card">
+        <h4>飯店 → 櫛田神社前</h4>
+        <div class="route-meta">09:30 → 09:42 ｜ 地鐵七隈線 ｜ ¥210（可刷 SUGOCA）</div>
+        <a href="travel/img624/d625_1.png" target="_blank"><img class="route-img" src="travel/img624/d625_1.png" alt="飯店→櫛田神社 乘換案內"></a>
+      </div>
+      <div class="sec-title">🎁 必買伴手禮</div>
+      <div class="food-row"><div class="food-emoji">🐟</div><div><div class="food-name">明太子（辛子明太子）</div><div class="food-desc">福岡第一名產！「ふくや」「海千」「福砂屋」都是知名品牌，博多站地下街全有。</div></div></div>
+      <div class="food-row"><div class="food-emoji">🥐</div><div><div class="food-name">博多通饅頭 / 二〇加煎餅</div><div class="food-desc">福岡代表性和菓子伴手禮，精美包裝，適合送禮。</div></div></div>
+      <div class="food-row"><div class="food-emoji">🍰</div><div><div class="food-name">福砂屋蜂蜜蛋糕（Castella）</div><div class="food-desc">長崎蜂蜜蛋糕老舖，底部砂糖口感獨特，自用送禮皆宜。</div></div></div>
+      <div class="food-row"><div class="food-emoji">🐻</div><div><div class="food-name">熊本熊（Kumamon）周邊</div><div class="food-desc">熊本城彩苑最齊全！孩童必定瘋搶。博多站也有販售。</div></div></div>
+    </div>
+
+    <!-- ======== TAXI ======== -->
+    <div class="tab-content" id="content-taxi">
+      <div class="day-hdr hdr-d4">
+        <h2>🚕 計程車目的地（給司機看）</h2>
+        <div class="sub">中文名 ・ 日文名 ・ 日文地址</div>
+        <span class="type-badge">📋 直接指給司機看目的地</span>
+      </div>
+      <div class="notice" style="background:#FFF8E1;border-left-color:#F9A825;">把這一頁拿給計程車司機看，指出目的地的<strong>日文名稱</strong>與<strong>日文地址</strong>即可；點「📍 地圖」可開啟 Google 地圖導航。</div>
+
+      <div class="sec-title">🏨 住宿</div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">飯店</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">クロスライフ博多柳橋（オリックス ホテルズ＆リゾーツ）</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県福岡市中央区春吉3丁目12-1</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=クロスライフ博多柳橋+福岡市中央区春吉3-12-1" target="_blank">📍 地圖</a>
+      </div>
+
+      <div class="sec-title">🍽️ 餐廳（福岡市內）</div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">Day2 晚餐・海鮮居酒屋 うお田</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">博多シーフード うお田（西中洲店）</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県福岡市中央区西中洲4-17 であい橋ビル1F</div>
+        <div style="font-size:13px;color:#C62828;margin-top:3px;">※ うお田有多家分店，出發前請再確認預訂分店</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=博多シーフードうお田+西中洲" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">Day3 晚餐・水炊き（已預約 G9W6WQ）</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">博多水炊き とり田 薬院店</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県福岡市中央区薬院2-3-30 CASE薬院ビル1F</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=博多水炊き+とり田+薬院店" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">Day4 晚餐・全員聚餐（黑毛和牛壽喜燒）</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">焼肉・すき焼き 純 天神警固店</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県福岡市中央区警固1-6-56 サウスガーデンビル1F</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=焼肉すき焼き純+天神警固店" target="_blank">📍 地圖</a>
+      </div>
+
+      <div class="sec-title">🛶 柳川（Day4）</div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">川下り遊船・上船處</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">柳川観光開発 松月乗船場</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県柳川市三橋町高畑329</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=松月乗船場+柳川市三橋町高畑329" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">Day4 午餐・柳川鰻魚飯</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">民芸茶屋 六騎</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県柳川市沖端町28</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=民芸茶屋六騎+柳川市沖端町28" target="_blank">📍 地圖</a>
+      </div>
+
+      <div class="sec-title">⛩️ 福岡市內・近郊（Day5）</div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">博多總鎮守</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">櫛田神社</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県福岡市博多区上川端町1-41</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=櫛田神社+博多区上川端町1-41" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">商店街</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">川端通商店街（上川端商店街）</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県福岡市博多区上川端町</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=上川端商店街+博多" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">水族館</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">マリンワールド海の中道</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県福岡市東区西戸崎18-28</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=マリンワールド海の中道" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">返台・搭機（國際線）</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">福岡空港 国際線旅客ターミナル</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県福岡市博多区大字青木739</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=福岡空港+国際線旅客ターミナル+博多区大字青木739" target="_blank">📍 地圖</a>
+      </div>
+
+      <div class="sec-title">🚌 包車景點（Day2–3・備用）</div>
+      <div class="notice" style="background:#ECEFF1;border-left-color:#90A4AE;font-size:14px;">Day2–3 為包車，原則上不需計程車；以下日文地址供臨時叫車或走散時備用。山區景點以「景點名稱」最易溝通。</div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">學問之神</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">太宰府天満宮</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">福岡県太宰府市宰府4-7-1</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=太宰府天満宮" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">由布院</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">金鱗湖</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">大分県由布市湯布院町川上</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=金鱗湖+由布院" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">童話小村</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">湯布院フローラルビレッジ</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">大分県由布市湯布院町川上1503-3</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=湯布院フローラルビレッジ" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">阿蘇外輪山展望</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">大観峰</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">熊本県阿蘇市山田（大観峰）</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=大観峰+阿蘇" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">阿蘇草原</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">草千里ヶ浜</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">熊本県阿蘇市草千里ヶ浜</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=草千里ヶ浜+阿蘇" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">活火山火口</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">阿蘇中岳火口（阿蘇山上）</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">熊本県阿蘇市黒川（阿蘇山）</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=阿蘇中岳火口" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">日本三大名城</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">熊本城</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">熊本県熊本市中央区本丸1-1</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=熊本城" target="_blank">📍 地圖</a>
+      </div>
+      <div class="route-card">
+        <div style="font-size:14px;color:#777;">熊本城旁商店街</div>
+        <div style="font-size:21px;font-weight:800;color:#111;margin:2px 0 4px;">桜の馬場 城彩苑</div>
+        <div style="font-size:18px;font-weight:700;color:#1565C0;">熊本県熊本市中央区二の丸1-1</div>
+        <a class="gmap-btn" href="https://maps.google.com/?q=桜の馬場城彩苑+熊本" target="_blank">📍 地圖</a>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<button class="scroll-top" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const TABS=['overview','day1','day2','day3','day4','day5','taxi'];
+const mapsInit={};
+let cur='overview';
+
+function switchTab(t){
+  if(cur===t)return;
+  cur=t;
+  TABS.forEach(id=>{
+    document.getElementById('content-'+id).classList.toggle('active',id===t);
+  });
+  document.querySelectorAll('.day-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.tab===t));
+  document.querySelector('.main').scrollTop=0;
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>{if(!mapsInit[t]){mapsInit[t]=true;initMap(t);}},200);
+}
+
+const TILE='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const ATTR='© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>';
+
+function mkIcon(e,c){
+  return L.divIcon({html:'<div style="background:'+c+';width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">'+e+'</div>',iconSize:[40,40],iconAnchor:[20,20],popupAnchor:[0,-22],className:''});
+}
+function mk(map,lat,lng,e,c,name,info){
+  return L.marker([lat,lng],{icon:mkIcon(e,c)}).addTo(map).bindPopup('<strong style="font-size:14px">'+name+'</strong>'+(info?'<br><small>'+info+'</small>':''));
+}
+function route(map,pts,c){
+  L.polyline(pts,{color:c,weight:4,opacity:.7,dashArray:'8,6'}).addTo(map);
+}
+
+function initMap(t){
+  const el=document.getElementById('map-'+t);
+  if(!el||el._leaflet_id)return;
+  const hotel=[33.5880,130.4030];
+  let map;
+  if(t==='overview'){
+    map=L.map('map-overview',{scrollWheelZoom:false}).setView([33.1,130.9],8);
+    L.tileLayer(TILE,{attribution:ATTR,maxZoom:18}).addTo(map);
+    mk(map,33.5880,130.4030,'🏨','#667eea','飯店 Cross Life 柳橋','住宿5晚');
+    mk(map,33.5895,130.4512,'✈️','#F5576C','福岡機場','Day1/5');
+    mk(map,33.5214,130.5350,'⛩️','#4FACFE','太宰府天滿宮','Day2');
+    mk(map,33.2647,131.3668,'🏡','#43E97B','由布院金鱗湖','Day2');
+    mk(map,33.2807,131.4432,'🚡','#FA709A','別府纜車','Day2備案');
+    mk(map,33.0008,131.1016,'🏔️','#38F9D7','阿蘇大觀峰','Day3');
+    mk(map,32.8846,131.0807,'🐎','#FEE140','草千里','Day3');
+    mk(map,32.8843,131.0848,'🌋','#F5576C','阿蘇中岳火口','Day3');
+    mk(map,32.8063,130.7063,'🏯','#A18CD1','熊本城','Day3');
+    mk(map,33.1693,130.4490,'🛶','#00F2FE','柳川（川下り遊船）','Day4');
+    route(map,[hotel,[33.5214,130.5350],[33.2647,131.3668],[33.2807,131.4432],hotel],'#4FACFE');
+    route(map,[hotel,[33.0008,131.1016],[32.8846,131.0807],[32.8843,131.0848],[32.8063,130.7063],hotel],'#43E97B');
+  }else if(t==='day1'){
+    map=L.map('map-day1',{scrollWheelZoom:false}).setView([33.587,130.415],13);
+    L.tileLayer(TILE,{attribution:ATTR,maxZoom:18}).addTo(map);
+    mk(map,33.5895,130.4512,'✈️','#F5576C','福岡機場','BR102 18:20到達');
+    mk(map,33.5880,130.4030,'🏨','#667eea','飯店 Cross Life 柳橋','計程車約15-20分');
+    mk(map,33.5899,130.4208,'🍜','#FA709A','博多站周邊','晚餐');
+    route(map,[[33.5895,130.4512],[33.5880,130.4030]],'#F5576C');
+  }else if(t==='day2'){
+    map=L.map('map-day2',{scrollWheelZoom:false}).setView([33.2,131.0],9);
+    L.tileLayer(TILE,{attribution:ATTR,maxZoom:18}).addTo(map);
+    mk(map,33.5880,130.4030,'🏨','#667eea','飯店','08:00出發');
+    mk(map,33.5214,130.5350,'⛩️','#4FACFE','太宰府天滿宮','08:45-10:15');
+    mk(map,33.2647,131.3668,'🏡','#43E97B','由布院金鱗湖','12:15-15:15');
+    mk(map,33.2807,131.4432,'🚡','#FA709A','別府纜車','備案');
+    route(map,[hotel,[33.5214,130.5350],[33.2647,131.3668],[33.2807,131.4432],hotel],'#4FACFE');
+  }else if(t==='day3'){
+    map=L.map('map-day3',{scrollWheelZoom:false}).setView([32.95,130.9],9);
+    L.tileLayer(TILE,{attribution:ATTR,maxZoom:18}).addTo(map);
+    mk(map,33.5880,130.4030,'🏨','#667eea','飯店','08:00出發');
+    mk(map,33.0008,131.1016,'🏔️','#38F9D7','阿蘇大觀峰','10:30');
+    mk(map,32.8846,131.0807,'🐎','#FEE140','草千里','11:30');
+    mk(map,32.8843,131.0848,'🌋','#F5576C','阿蘇中岳火口','視開放');
+    mk(map,32.8063,130.7063,'🏯','#A18CD1','熊本城','15:00');
+    route(map,[hotel,[33.0008,131.1016],[32.8846,131.0807],[32.8843,131.0848],[32.8063,130.7063],hotel],'#43E97B');
+  }else if(t==='day4'){
+    map=L.map('map-day4',{scrollWheelZoom:false}).setView([33.38,130.43],10);
+    L.tileLayer(TILE,{attribution:ATTR,maxZoom:18}).addTo(map);
+    mk(map,33.5880,130.4030,'🏨','#667eea','飯店 Cross Life 柳橋','08:19 出發');
+    mk(map,33.5802,130.4030,'🚆','#FA709A','薬院站','搭西鐵特急');
+    mk(map,33.1743,130.4556,'🚉','#4FACFE','西鐵柳川站','09:19 抵達');
+    mk(map,33.1693,130.4490,'🛶','#00F2FE','松月乘船場（川下り）','10:00 上船');
+    mk(map,33.1553,130.4025,'🍱','#f7971e','民藝茶屋六騎','12:00 鰻魚飯');
+    mk(map,33.5836,130.3946,'🍲','#A18CD1','聚餐 純 天神警固店','19:00 黑毛和牛');
+    route(map,[[33.5880,130.4030],[33.1743,130.4556],[33.1693,130.4490],[33.1553,130.4025],[33.1743,130.4556],[33.5880,130.4030],[33.5836,130.3946]],'#FA709A');
+  }else if(t==='day5'){
+    map=L.map('map-day5',{scrollWheelZoom:false}).setView([33.61,130.42],11);
+    L.tileLayer(TILE,{attribution:ATTR,maxZoom:18}).addTo(map);
+    mk(map,33.5880,130.4030,'🏨','#667eea','飯店 Cross Life 柳橋','退房+寄存行李');
+    mk(map,33.5917,130.4106,'⛩️','#4FACFE','櫛田神社・川端商店街','10:00-12:00');
+    mk(map,33.6682,130.3360,'🐬','#00F2FE','海洋世界海之中道','12:30-15:00');
+    mk(map,33.5895,130.4512,'✈️','#F5576C','福岡機場','17:00集合');
+    route(map,[[33.5880,130.4030],[33.5917,130.4106],[33.6682,130.3360],[33.5880,130.4030],[33.5895,130.4512]],'#A18CD1');
+  }
+}
+
+window.addEventListener('scroll',()=>{
+  document.getElementById('scrollTopBtn').classList.toggle('show',window.scrollY>200);
+});
+window.addEventListener('load',()=>{
+  setTimeout(()=>{mapsInit['overview']=true;initMap('overview');},400);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本福岡旅遊互動指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('info');
+
+            const [budget, setBudget] = useState({
+                flight: 8500,
+                hotel: 6000,
+                transport: 1500,
+                food: 4500,
+                shopping: 8000
+            });
+
+            const handleBudgetChange = (category, value) => {
+                const numValue = value === '' ? 0 : Number(value);
+                setBudget(prev => ({ ...prev, [category]: numValue }));
+            };
+
+            const totalBudget = Object.values(budget).reduce((a, b) => a + b, 0);
+
+            const categories = [
+                { id: 'food',          icon: '🍜', title: '食 (美食)',   desc: '必吃博多豚骨拉麵（一蘭、一風堂）、牛腸鍋、水炊雞肉鍋，晚上絕對不能錯過中洲或天神的「屋台」路邊攤文化。',                                          color: 'bg-red-100 text-red-600'     },
+                { id: 'clothing',      icon: '🛍️', title: '衣 (購物)',   desc: '天神地下街（綿延600公尺的歐風購物天堂）、博多車站 JR 博多城、博多運河城、以及有巨型鋼彈的 LaLaport 福岡。',                                      color: 'bg-orange-100 text-orange-600'},
+                { id: 'housing',       icon: '🏨', title: '住 (住宿)',   desc: '推薦住在「博多車站」周邊（適合常搭JR去近郊，免搬行李），或「天神商圈」（適合喜愛市區逛街與豐富夜生活的人）。',                                      color: 'bg-blue-100 text-blue-600'   },
+                { id: 'transport',     icon: '🚇', title: '行 (交通)',   desc: '福岡機場到市區只要10-15分鐘！市區移動以地下鐵和西鐵巴士為主。去太宰府或柳川可搭乘西鐵電車。',                                                    color: 'bg-green-100 text-green-600' },
+                { id: 'education',     icon: '⛩️', title: '育 (文化)',   desc: '前往「太宰府天滿宮」祈求學業順利、品嚐梅枝餅，欣賞隈研吾設計的特色星巴克。或造訪福岡城跡感受歷史。',                                              color: 'bg-purple-100 text-purple-600'},
+                { id: 'entertainment', icon: '🎡', title: '樂 (娛樂)',   desc: '市區可去福岡塔看夜景、BOSS E・ZO FUKUOKA 體驗遊樂設施；近郊可安排「由布院」溫泉或「柳川」愜意遊船。',                                          color: 'bg-pink-100 text-pink-600'   }
+            ];
+
+            const itinerary = [
+                {
+                    day: 'Day 1',
+                    title: '福岡市區初探：購物與屋台文化',
+                    spots: ['福岡機場抵達', '博多車站商圈 (JR博多城)', '博多運河城 (整點水舞秀)', '中洲屋台 (體驗在地宵夜)'],
+                    transport: '地下鐵空港線、步行',
+                    transportIcon: '🚇',
+                    time: '約 6 小時',
+                    tip: '💡 交通秘訣：福岡地下鐵強烈建議直接用「信用卡感應」進站！一日最高上限僅收 640 日圓，比買一日券或刷西瓜卡還划算！'
+                },
+                {
+                    day: 'Day 2',
+                    title: '近郊歷史與浪漫：太宰府與柳川',
+                    spots: ['西鐵福岡(天神)站出發', '太宰府天滿宮 (參拜、吃梅枝餅)', '柳川遊船 (搭乘日式小船)', '品嚐柳川名物：蒸籠鰻魚飯'],
+                    transport: '西鐵電車 (建議購買套票)',
+                    transportIcon: '🚆',
+                    time: '約 8-9 小時',
+                    tip: '💡 行程建議：套票包含車票與遊船費用。柳川遊船約需 60 分鐘，沿途風景優美，非常適合長輩或情侶。'
+                },
+                {
+                    day: 'Day 3',
+                    title: '海濱風光與天神爆買：完美收尾',
+                    spots: ['福岡塔 & 百道海濱公園', 'LaLaport 福岡 (朝聖 1:1 巨型 νGundam)', '天神地下街 & PARCO', '前往機場搭機返家'],
+                    transport: '西鐵巴士、地下鐵',
+                    transportIcon: '🚌',
+                    time: '約 7 小時',
+                    tip: '💡 購物小提醒：LaLaport 內有平價好逛的 LOPIA 超市；天神地下街店鋪多達150家，建議預留2-3小時採買伴手禮。'
+                }
+            ];
+
+            return (
+                <div className="min-h-screen text-gray-800 pb-12">
+                    {/* Header */}
+                    <header className="bg-gradient-to-r from-red-500 to-orange-500 text-white py-12 px-4 text-center shadow-md">
+                        <h1 className="text-4xl font-bold mb-3 flex items-center justify-center gap-3">
+                            ✈️ 日本福岡旅遊互動指南
+                        </h1>
+                        <p className="text-lg opacity-90 max-w-2xl mx-auto">
+                            為您量身打造的九州福岡自由行提案，包含食衣住行、精選行程與智能預算規劃。
+                        </p>
+                    </header>
+
+                    <main className="max-w-5xl mx-auto mt-8 px-4">
+                        {/* Tabs */}
+                        <div className="flex flex-wrap justify-center gap-2 mb-8 bg-white p-2 rounded-xl shadow-sm">
+                            {[
+                                { id: 'info',      label: 'ℹ️ 食衣住行育樂'   },
+                                { id: 'itinerary', label: '🗺️ 行程與交通規劃' },
+                                { id: 'budget',    label: '🧮 互動消費試算'   }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                                        activeTab === tab.id
+                                            ? 'bg-red-500 text-white shadow-md'
+                                            : 'text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* 食衣住行育樂 */}
+                        {activeTab === 'info' && (
+                            <div className="fade-in">
+                                <div className="mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800 border-l-4 border-red-500 pl-3">福岡六大旅遊特色解析</h2>
+                                    <p className="text-gray-600 mt-2">點擊各區塊了解為什麼福岡被稱為「距離台灣最近的購物與美食天堂」。</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {categories.map(cat => (
+                                        <div key={cat.id} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+                                            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl mb-4 ${cat.color}`}>
+                                                {cat.icon}
+                                            </div>
+                                            <h3 className="text-xl font-bold mb-2">{cat.title}</h3>
+                                            <p className="text-gray-600 leading-relaxed">{cat.desc}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 行程規劃 */}
+                        {activeTab === 'itinerary' && (
+                            <div className="fade-in">
+                                <div className="mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800 border-l-4 border-red-500 pl-3">三日精華自由行規劃</h2>
+                                    <p className="text-gray-600 mt-2">包含詳細交通方式與預估花費時間，不自駕也能輕鬆玩遍福岡。</p>
+                                </div>
+                                <div className="space-y-6">
+                                    {itinerary.map((item, index) => (
+                                        <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col md:flex-row">
+                                            <div className="bg-gray-50 md:w-48 p-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-100">
+                                                <span className="text-red-500 font-bold text-xl mb-1">{item.day}</span>
+                                                <h3 className="font-bold text-center text-gray-800">{item.title}</h3>
+                                            </div>
+                                            <div className="p-6 flex-1">
+                                                <div className="flex flex-wrap gap-3 mb-4">
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700">
+                                                        {item.transportIcon} 交通: {item.transport}
+                                                    </span>
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-50 text-yellow-700">
+                                                        ⏱️ 總時間: {item.time}
+                                                    </span>
+                                                </div>
+                                                <ul className="space-y-2 mb-4">
+                                                    {item.spots.map((spot, idx) => (
+                                                        <li key={idx} className="flex items-start">
+                                                            <span className="mr-2 mt-0.5">✅</span>
+                                                            <span className="text-gray-700">{spot}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                                <div className="bg-red-50 p-4 rounded-lg text-red-800 text-sm">
+                                                    <p>{item.tip}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 預算試算 */}
+                        {activeTab === 'budget' && (
+                            <div className="fade-in">
+                                <div className="mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800 border-l-4 border-red-500 pl-3">福岡旅遊消費預算試算表</h2>
+                                    <p className="text-gray-600 mt-2">請輸入您預估的各項花費金額（新台幣 TWD），系統將自動為您加總旅費。</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                                    <div className="md:col-span-3 space-y-4 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                        {[
+                                            { id: 'flight',   label: '✈️ 來回機票',   val: budget.flight   },
+                                            { id: 'hotel',    label: '🏨 住宿費用',   val: budget.hotel    },
+                                            { id: 'transport',label: '🚇 交通花費',   val: budget.transport},
+                                            { id: 'food',     label: '🍜 飲食花費',   val: budget.food     },
+                                            { id: 'shopping', label: '🛍️ 購物與門票', val: budget.shopping }
+                                        ].map(item => (
+                                            <div key={item.id} className="flex flex-col gap-1">
+                                                <label className="font-semibold text-gray-700">{item.label} (TWD)</label>
+                                                <input
+                                                    type="number"
+                                                    value={item.val}
+                                                    onChange={e => handleBudgetChange(item.id, e.target.value)}
+                                                    className="p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <div className="bg-gradient-to-br from-red-500 to-orange-400 rounded-xl p-8 text-white h-full flex flex-col justify-center items-center shadow-lg">
+                                            <span className="text-5xl mb-4 opacity-90">💰</span>
+                                            <p className="text-lg font-medium opacity-90 mb-2">總計預估花費</p>
+                                            <h3 className="text-4xl md:text-5xl font-bold mb-6">
+                                                ${totalBudget.toLocaleString()}
+                                            </h3>
+                                            <div className="bg-white/20 p-4 rounded-lg w-full text-center text-sm">
+                                                <p>* 福岡物價相對東京、大阪更親民，是小資族出國首選！</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
