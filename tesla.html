@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>⚡ 特斯拉充電地圖｜九州</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --p1:#667eea;--p2:#764ba2;--red:#E82127;--dark:#2C3E50;--light:#F0F4F8;
+  --fs-xs:13px; --fs-sm:15px; --fs-md:17px; --fs-lg:20px; --fs-xl:26px; --fs-2xl:34px;
+}
+html{font-size:16px;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Noto Sans TC','Microsoft JhengHei',sans-serif;
+  background:var(--light);color:var(--dark);
+}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(135deg,#232526 0%,#414345 60%,var(--red) 140%);
+  color:#fff;padding:40px 44px 32px;
+  display:flex;align-items:center;gap:28px;
+  position:relative;overflow:hidden;
+}
+.hero::after{
+  content:'';position:absolute;right:-60px;top:-60px;
+  width:300px;height:300px;border-radius:50%;
+  background:rgba(255,255,255,.07);pointer-events:none;
+}
+.hero-emoji{font-size:64px;line-height:1;flex-shrink:0;}
+.hero h1{font-size:var(--fs-2xl);font-weight:900;letter-spacing:2px;line-height:1.2;}
+.hero-sub{font-size:var(--fs-md);opacity:.9;margin-top:8px;}
+.hero-badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+.badge{background:rgba(255,255,255,.2);border-radius:24px;padding:7px 18px;font-size:var(--fs-sm);font-weight:600;}
+.back-link{
+  display:inline-block;margin-top:14px;color:#fff;text-decoration:none;
+  background:rgba(255,255,255,.18);border-radius:24px;padding:8px 20px;
+  font-size:var(--fs-sm);font-weight:700;transition:background .2s;
+}
+.back-link:hover{background:rgba(255,255,255,.32);}
+
+/* ── MAIN ── */
+.main{max-width:1100px;margin:0 auto;padding:36px 44px 80px;}
+
+/* ── MAP ── */
+.map-wrap{border-radius:18px;overflow:hidden;margin-bottom:24px;box-shadow:0 4px 18px rgba(0,0,0,.1);}
+.map-hdr{background:var(--dark);color:#fff;padding:14px 20px;font-size:var(--fs-md);font-weight:700;display:flex;align-items:center;gap:8px;}
+.map-div{height:480px;}
+
+/* ── LEGEND / NOTE ── */
+.note{
+  background:#fff;border-radius:16px;padding:18px 22px;margin-bottom:24px;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);font-size:var(--fs-sm);line-height:1.8;
+}
+.note strong{color:var(--red);}
+
+/* ── SECTION TITLE ── */
+.sec-title{font-size:var(--fs-lg);font-weight:900;margin:32px 0 16px;display:flex;align-items:center;gap:10px;}
+
+/* ── CHARGER CARDS ── */
+.att-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
+.att-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.08);display:flex;flex-direction:column;}
+.att-img{height:90px;display:flex;align-items:center;justify-content:center;font-size:44px;}
+.att-body{padding:16px 18px 18px;flex:1;display:flex;flex-direction:column;gap:8px;}
+.att-name{font-weight:800;font-size:var(--fs-md);}
+.att-desc{font-size:var(--fs-sm);color:#546a7d;line-height:1.6;flex:1;}
+.spec{display:flex;flex-wrap:wrap;gap:6px;}
+.spec span{background:#eef2f7;border-radius:10px;padding:3px 10px;font-size:var(--fs-xs);font-weight:700;color:#475569;}
+.gmap-btn{
+  display:inline-block;align-self:flex-start;text-decoration:none;
+  background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;
+  border-radius:20px;padding:7px 16px;font-size:var(--fs-xs);font-weight:700;
+}
+.tesla-btn{background:linear-gradient(135deg,#E82127,#a3151a);}
+
+@media(max-width:640px){
+  .hero{padding:28px 22px;flex-direction:column;text-align:center;gap:14px;}
+  .main{padding:24px 16px 60px;}
+  .map-div{height:380px;}
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-emoji">⚡</div>
+  <div>
+    <h1>特斯拉充電地圖</h1>
+    <div class="hero-sub">九州超級充電站 Supercharger 總覽・搭配五日遊行程路線</div>
+    <div class="hero-badges">
+      <span class="badge">🔴 超級充電站 ×5</span>
+      <span class="badge">🚗 自駕充電規劃</span>
+      <span class="badge">🗾 九州全域</span>
+    </div>
+    <a class="back-link" href="index.html">← 回九州五日遊行程</a>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="map-wrap">
+    <div class="map-hdr">⚡ 九州超級充電站 + 行程路線圖</div>
+    <div class="map-div" id="map-tesla"></div>
+  </div>
+
+  <div class="note">
+    <strong>使用提醒：</strong>地圖上的紅色閃電為特斯拉超級充電站（Supercharger），虛線為 Day2（藍）與 Day3（綠）自駕路線。
+    充電站位置以官方導航為準——出發前建議直接用<strong>車內導航</strong>或下方各站的 Google Maps 按鈕確認即時狀態與車位。
+    日本的特斯拉也可加購 CHAdeMO 轉接頭，使用高速公路服務區（SA/PA）與道之駅的快充樁作為備援。
+    最新站點清單請見 <a href="https://www.tesla.com/ja_JP/findus/list/superchargers/Japan" target="_blank">Tesla 官方充電站列表</a>。
+  </div>
+
+  <div class="sec-title">🔌 九州超級充電站清單</div>
+  <div class="att-grid">
+
+    <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#E82127,#a3151a)">⚡</div><div class="att-body">
+      <div class="att-name">福岡超級充電站</div>
+      <div class="att-desc">位於 AEON MALL 福岡（糟屋郡須惠町旅石845-1），距博多市區車程約 25 分鐘，是 Day2 太宰府方向順路的補電點。可邊逛商場邊充電。</div>
+      <div class="spec"><span>6 樁</span><span>最大 138kW</span><span>24 小時</span></div>
+      <a class="gmap-btn" href="https://maps.google.com/?q=テスラ+スーパーチャージャー+イオンモール福岡" target="_blank">📍 Google Maps</a>
+    </div></div>
+
+    <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#E82127,#a3151a)">⚡</div><div class="att-body">
+      <div class="att-name">北九州超級充電站</div>
+      <div class="att-desc">位於 THE OUTLETS 北九州（八幡東區東田），是九州最快的 V3 充電站。從本州開車進九州、或往門司港方向時的最佳補電點。</div>
+      <div class="spec"><span>6 樁</span><span>最大 250kW・V3</span><span>7:00–23:00</span></div>
+      <a class="gmap-btn" href="https://maps.google.com/?q=テスラ+スーパーチャージャー+ジ+アウトレット北九州" target="_blank">📍 Google Maps</a>
+    </div></div>
+
+    <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#E82127,#a3151a)">⚡</div><div class="att-body">
+      <div class="att-name">熊本超級充電站</div>
+      <div class="att-desc">位於熊本市東區櫻木（HALLODAY 櫻之森店停車場西側），在熊本市區往阿蘇方向的路上——Day3 阿蘇・熊本城行程的關鍵補電點。</div>
+      <div class="spec"><span>V2</span><span>24 小時</span></div>
+      <a class="gmap-btn" href="https://maps.google.com/?q=テスラ+スーパーチャージャー+熊本+桜木" target="_blank">📍 Google Maps</a>
+    </div></div>
+
+    <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#E82127,#a3151a)">⚡</div><div class="att-body">
+      <div class="att-name">大分超級充電站</div>
+      <div class="att-desc">位於 Park Place 大分購物中心（大分市公園通り西2-1）。由布院・別府方向續航不足時，可繞往大分市區補電。</div>
+      <div class="spec"><span>4 樁</span><span>V2</span></div>
+      <a class="gmap-btn" href="https://maps.google.com/?q=テスラ+スーパーチャージャー+パークプレイス大分" target="_blank">📍 Google Maps</a>
+    </div></div>
+
+    <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#E82127,#a3151a)">⚡</div><div class="att-body">
+      <div class="att-name">鹿兒島超級充電站</div>
+      <div class="att-desc">位於 AEON MALL 鹿兒島（鹿兒島市東開町7）。若行程延伸到南九州（櫻島、指宿）時使用。</div>
+      <div class="spec"><span>6 樁</span><span>V2</span></div>
+      <a class="gmap-btn" href="https://maps.google.com/?q=テスラ+スーパーチャージャー+イオンモール鹿児島" target="_blank">📍 Google Maps</a>
+    </div></div>
+
+    <div class="att-card"><div class="att-img" style="background:linear-gradient(135deg,#232526,#414345)">🗺️</div><div class="att-body">
+      <div class="att-name">Tesla 官方即時地圖</div>
+      <div class="att-desc">站點會持續新增（日本已超過 150 站），出發前用官方地圖或車內導航查詢最新站點與即時空位最準確。</div>
+      <div class="spec"><span>官方資料</span><span>即時更新</span></div>
+      <a class="gmap-btn tesla-btn" href="https://www.tesla.com/ja_JP/findus/list/superchargers/Japan" target="_blank">⚡ Tesla 官網</a>
+    </div></div>
+
+  </div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const TILE='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const ATTR='© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>';
+
+function mkIcon(e,c){
+  return L.divIcon({html:'<div style="background:'+c+';width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">'+e+'</div>',iconSize:[40,40],iconAnchor:[20,20],popupAnchor:[0,-22],className:''});
+}
+function mk(map,lat,lng,e,c,name,info){
+  return L.marker([lat,lng],{icon:mkIcon(e,c)}).addTo(map).bindPopup('<strong style="font-size:14px">'+name+'</strong>'+(info?'<br><small>'+info+'</small>':''));
+}
+function route(map,pts,c){
+  L.polyline(pts,{color:c,weight:4,opacity:.7,dashArray:'8,6'}).addTo(map);
+}
+
+window.addEventListener('load',()=>{
+  const map=L.map('map-tesla',{scrollWheelZoom:false}).setView([32.9,130.9],8);
+  L.tileLayer(TILE,{attribution:ATTR,maxZoom:18}).addTo(map);
+
+  const hotel=[33.5880,130.4030];
+
+  // 超級充電站（位置為概略座標，導航請用卡片的 Google Maps 按鈕）
+  mk(map,33.5750,130.4820,'⚡','#E82127','福岡超級充電站','AEON MALL 福岡・6樁 138kW');
+  mk(map,33.8686,130.8040,'⚡','#E82127','北九州超級充電站','THE OUTLETS 北九州・6樁 250kW V3');
+  mk(map,32.7885,130.7790,'⚡','#E82127','熊本超級充電站','熊本市東區櫻木・HALLODAY 停車場');
+  mk(map,33.1870,131.6550,'⚡','#E82127','大分超級充電站','Park Place 大分・4樁');
+  mk(map,31.5310,130.5297,'⚡','#E82127','鹿兒島超級充電站','AEON MALL 鹿兒島・6樁');
+
+  // 行程地標
+  mk(map,33.5880,130.4030,'🏨','#667eea','飯店 Cross Life 柳橋','住宿5晚');
+  mk(map,33.5214,130.5350,'⛩️','#4FACFE','太宰府天滿宮','Day2');
+  mk(map,33.2647,131.3668,'🏡','#43E97B','由布院金鱗湖','Day2');
+  mk(map,33.0008,131.1016,'🏔️','#38F9D7','阿蘇大觀峰','Day3');
+  mk(map,32.8063,130.7063,'🏯','#A18CD1','熊本城','Day3');
+  mk(map,33.1693,130.4490,'🛶','#00F2FE','柳川','Day4');
+
+  // Day2（藍）/ Day3（綠）自駕路線
+  route(map,[hotel,[33.5214,130.5350],[33.2647,131.3668],hotel],'#4FACFE');
+  route(map,[hotel,[33.0008,131.1016],[32.8063,130.7063],hotel],'#43E97B');
+});
+</script>
+</body>
+</html>
